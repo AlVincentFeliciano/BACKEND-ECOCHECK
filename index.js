@@ -17,21 +17,20 @@ app.use(express.json()); // handles JSON requests
 app.use(express.urlencoded({ extended: true })); // handles form submissions
 
 // ✅ Serve uploads folder publicly
-app.use('/uploads', express.static('uploads'));
-
+app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 
 // ✅ Define Routes
 app.use('/api/users', require('./src/routes/userRoutes'));
 app.use('/api/auth', require('./src/routes/authRoutes'));
 app.use('/api/reports', require('./src/routes/reportRoutes'));
 
-// ✅ Serve static assets if in production 
+// ✅ Serve admin dashboard (React build) for web
 if (process.env.NODE_ENV === 'production') {
-    app.use(express.static('client/build'));
-   app.get('*', (req, res) => {
-  res.sendFile(path.resolve(__dirname, 'client', 'build', 'index.html'));
-});
-
+    app.use(express.static(path.join(__dirname, '../admin-dashboard/build')));
+    
+    app.get('*', (req, res) => {
+        res.sendFile(path.join(__dirname, '../admin-dashboard/build', 'index.html'));
+    });
 }
 
 const PORT = process.env.PORT || 5000;
