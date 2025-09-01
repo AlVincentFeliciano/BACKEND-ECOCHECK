@@ -1,13 +1,17 @@
-const Report = require('../models/report');
+const Report = require('../models/Report');
 
 // Create a new report
+// src/controllers/reportController.js
 const createReport = async (req, res) => {
   try {
     const { name, contact, description, location, latitude, longitude } = req.body;
 
-    if (!req.file) return res.status(400).json({ error: 'Photo is required' });
+    if (!req.file) {
+      return res.status(400).json({ error: 'Photo is required' });
+    }
 
-    const photoUrl = `${req.protocol}://${req.get('host')}/uploads/${req.file.filename}`;
+    // Force HTTPS for uploaded photos
+    const photoUrl = `https://${req.get('host')}/uploads/${req.file.filename}`;
 
     const newReport = await Report.create({
       name,
@@ -16,9 +20,9 @@ const createReport = async (req, res) => {
       location,
       latitude,
       longitude,
-      photoUrl,
+      photoUrl,       // <-- saved with HTTPS
       status: 'Pending',
-      user: req.user.id, // associate report with logged-in user
+      user: req.user.id,
     });
 
     res.status(201).json(newReport);
@@ -27,6 +31,7 @@ const createReport = async (req, res) => {
     res.status(500).json({ error: 'Server error' });
   }
 };
+
 
 // Get all reports for the logged-in user
 const getReports = async (req, res) => {
