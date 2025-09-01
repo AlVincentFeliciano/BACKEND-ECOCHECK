@@ -12,7 +12,9 @@ const app = express();
 connectDB();
 
 // ✅ Middleware
-app.use(cors());
+app.use(cors({
+  origin: 'https://admindashboard-ecocheck.vercel.app'
+}));
 app.use(express.json()); // handles JSON requests
 app.use(express.urlencoded({ extended: true })); // handles form submissions
 
