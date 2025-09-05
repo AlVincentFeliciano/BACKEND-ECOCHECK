@@ -47,7 +47,14 @@ exports.getUser = async (req, res) => {
     if (!user) {
       return res.status(404).json({ success: false, message: 'User not found' });
     }
-    res.json({ success: true, data: user });
+    res.json({
+      success: true,
+      data: {
+        id: user._id,
+        name: user.name,
+        email: user.email
+      }
+    });
   } catch (err) {
     console.error('❌ Get user error:', err.message);
     res.status(500).json({ success: false, message: 'Server error' });
@@ -69,7 +76,15 @@ exports.updateUser = async (req, res) => {
       return res.status(404).json({ success: false, message: 'User not found' });
     }
 
-    res.json({ success: true, message: 'User updated successfully', data: user });
+    res.json({
+      success: true,
+      message: 'User updated successfully',
+      data: {
+        id: user._id,
+        name: user.name,
+        email: user.email
+      }
+    });
   } catch (err) {
     console.error('❌ Update user error:', err.message);
     res.status(500).json({ success: false, message: 'Server error' });
