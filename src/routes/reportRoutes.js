@@ -1,19 +1,12 @@
+// backend/src/routes/reportRoutes.js
 const express = require('express');
 const router = express.Router();
 const { createReport, getReports, updateReportStatus } = require('../controllers/reportController');
 const multer = require('multer');
 const auth = require('../middleware/authMiddleware');
+const { storage } = require('../config/cloudinaryConfig'); // ✅ use Cloudinary storage
 
-// Multer setup
-const storage = multer.diskStorage({
-  destination: function (req, file, cb) {
-    cb(null, 'uploads/');
-  },
-  filename: function (req, file, cb) {
-    const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1e9);
-    cb(null, uniqueSuffix + '-' + file.originalname);
-  }
-});
+// Multer setup (now with Cloudinary)
 const upload = multer({ storage });
 
 // Routes (protected with auth)

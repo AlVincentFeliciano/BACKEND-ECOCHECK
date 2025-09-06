@@ -1,7 +1,6 @@
 const Report = require('../models/report');
 
 // Create a new report
-// src/controllers/reportController.js
 const createReport = async (req, res) => {
   try {
     const { name, contact, description, location, latitude, longitude } = req.body;
@@ -10,8 +9,8 @@ const createReport = async (req, res) => {
       return res.status(400).json({ error: 'Photo is required' });
     }
 
-    // Force HTTPS for uploaded photos
-    const photoUrl = `https://${req.get('host')}/uploads/${req.file.filename}`;
+    // ✅ Cloudinary automatically provides a secure URL
+    const photoUrl = req.file.path;
 
     const newReport = await Report.create({
       name,
@@ -20,7 +19,7 @@ const createReport = async (req, res) => {
       location,
       latitude,
       longitude,
-      photoUrl,       // <-- saved with HTTPS
+      photoUrl,       // <-- saved from Cloudinary
       status: 'Pending',
       user: req.user.id,
     });
@@ -32,14 +31,13 @@ const createReport = async (req, res) => {
   }
 };
 
-
 // Get all reports for the logged-in user
 const getReports = async (req, res) => {
   try {
     let reports;
 
-    // Admin sees all reports
     if (req.user.role === 'admin') {
+      // Admin sees all reports
       reports = await Report.find().populate('user', 'name email');
     } else {
       // Regular users see only their own reports
