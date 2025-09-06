@@ -17,4 +17,13 @@ const storage = new CloudinaryStorage({
   },
 });
 
-module.exports = { cloudinary, storage };
+const profileStorage = new CloudinaryStorage({
+  cloudinary,
+  params: {
+    folder: 'profilePics',
+    allowed_formats: ['jpg', 'png', 'jpeg'],
+    public_id: (req, file) => `profile_${Date.now()}`,
+  },
+});
+
+module.exports = { cloudinary, storage, profileStorage };

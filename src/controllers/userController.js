@@ -5,7 +5,7 @@ const bcrypt = require('bcryptjs');
 // Register a new user
 exports.registerUser = async (req, res) => {
   try {
-    const { name, email, password } = req.body;
+    const { name, email, password, bio } = req.body;
 
     if (!name || !email || !password) {
       return res.status(400).json({ success: false, message: 'All fields are required' });
@@ -22,7 +22,13 @@ exports.registerUser = async (req, res) => {
     const hashedPassword = await bcrypt.hash(password, salt);
 
     // Create and save user
-    const user = new User({ name, email, password: hashedPassword });
+    const user = new User({
+      name,
+      email,
+      password: hashedPassword,
+      bio: bio || '',
+      profilePic: req.file ? `/uploads/profilePics/${req.file.filename}` : ''
+    });
     await user.save();
 
     res.status(201).json({
@@ -32,6 +38,7 @@ exports.registerUser = async (req, res) => {
         id: user._id,
         name: user.name,
         email: user.email,
+        bio: user.bio,
         profilePic: user.profilePic || null
       }
     });
@@ -54,6 +61,7 @@ exports.getUser = async (req, res) => {
         id: user._id,
         name: user.name,
         email: user.email,
+        bio: user.bio,
         profilePic: user.profilePic || null
       }
     });
@@ -63,22 +71,21 @@ exports.getUser = async (req, res) => {
   }
 };
 
-// ✅ Update user by ID (now supports profilePic upload)
+// ✅ Update user by ID (supports bio + profilePic upload)
 exports.updateUser = async (req, res) => {
   try {
-    const { name } = req.body;
+    const { name, bio } = req.body;
     const updateFields = {};
 
     if (name) updateFields.name = name;
-    if (req.file) {
-      updateFields.profilePic = `/uploads/profilePics/${req.file.filename}`;
+    if (bio !== undefined) updateFields.bio = bio;
+
+    // ✅ Cloudinary: req.file.path is the uploaded URL
+    if (req.file && req.file.path) {
+      updateFields.profilePic = req.file.path;
     }
 
-    const user = await User.findByIdAndUpdate(
-      req.params.id,
-      updateFields,
-      { new: true }
-    ).select('-password');
+    const user = await User.findByIdAndUpdate(req.params.id, updateFields, { new: true }).select('-password');
 
     if (!user) {
       return res.status(404).json({ success: false, message: 'User not found' });
@@ -91,8 +98,9 @@ exports.updateUser = async (req, res) => {
         id: user._id,
         name: user.name,
         email: user.email,
-        profilePic: user.profilePic || null
-      }
+        bio: user.bio,
+        profilePic: user.profilePic || null,
+      },
     });
   } catch (err) {
     console.error('❌ Update user error:', err.message);
@@ -100,7 +108,7 @@ exports.updateUser = async (req, res) => {
   }
 };
 
-// (Optional) Get all users
+// Get all users
 exports.getAllUsers = async (req, res) => {
   try {
     const users = await User.find().select('-password');
