@@ -52,12 +52,13 @@ const getReports = async (req, res) => {
 };
 
 // Update report status
+const User = require('../models/user'); // add this at top
+
 const updateReportStatus = async (req, res) => {
   try {
     const { id } = req.params;
     const { status } = req.body;
 
-    // Validate status
     const validStatuses = ['Pending', 'On Going', 'Resolved'];
     if (!validStatuses.includes(status)) {
       return res.status(400).json({ error: 'Invalid status value' });
@@ -66,9 +67,17 @@ const updateReportStatus = async (req, res) => {
     const report = await Report.findById(id);
     if (!report) return res.status(404).json({ error: 'Report not found' });
 
-    // Only admins or the report owner can update
     if (req.user.role !== 'admin' && report.user.toString() !== req.user.id) {
       return res.status(403).json({ error: 'Unauthorized' });
+    }
+
+    // ✅ Award points if report is resolved by admin
+    if (status === 'Resolved' && report.status !== 'Resolved') {
+      const user = await User.findById(report.user);
+      if (user) {
+        user.points += 10; // or any points value
+        await user.save();
+      }
     }
 
     report.status = status;
@@ -80,6 +89,7 @@ const updateReportStatus = async (req, res) => {
     res.status(500).json({ error: 'Server error' });
   }
 };
+
 
 module.exports = {
   createReport,

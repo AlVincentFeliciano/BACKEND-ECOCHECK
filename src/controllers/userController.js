@@ -62,8 +62,9 @@ exports.getUser = async (req, res) => {
         name: user.name,
         email: user.email,
         bio: user.bio,
-        profilePic: user.profilePic || null
-      }
+        profilePic: user.profilePic || null,
+        points: user.points || 0,
+      },
     });
   } catch (err) {
     console.error('❌ Get user error:', err.message);
@@ -111,7 +112,7 @@ exports.updateUser = async (req, res) => {
 // Get all users
 exports.getAllUsers = async (req, res) => {
   try {
-    const users = await User.find().select('-password');
+    const users = await User.find().select('-password'); // already returns points
     res.json({ success: true, data: users });
   } catch (err) {
     console.error('❌ Get all users error:', err.message);
