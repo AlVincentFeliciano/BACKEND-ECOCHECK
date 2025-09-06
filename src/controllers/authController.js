@@ -6,7 +6,7 @@ const JWT_SECRET = process.env.JWT_SECRET || 'your_super_secret_key';
 
 // Register a new user
 exports.registerUser = async (req, res) => {
-  let { email, password } = req.body;
+  let { name, email, password } = req.body;  // <-- include name
   email = email.toLowerCase().trim();
 
   try {
@@ -16,6 +16,7 @@ exports.registerUser = async (req, res) => {
     console.log("👉 Raw password from request:", password);
 
     user = new User({
+      name,   // <-- add this
       email,
       password, // raw password, schema will hash it
       role: email.includes('@admin.com') ? 'admin' : 'user',
@@ -34,6 +35,7 @@ exports.registerUser = async (req, res) => {
     res.status(500).json({ message: err.message });
   }
 };
+
 
 // Login an existing user
 exports.loginUser = async (req, res) => {
