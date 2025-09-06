@@ -4,7 +4,8 @@ const multer = require('multer');
 const auth = require('../middleware/authMiddleware');
 
 const { registerUser, getUser, updateUser, getAllUsers } = require('../controllers/userController');
-const { profileStorage } = require('../config/cloudinary');
+const { cloudinary, profileStorage } = require('../config/cloudinaryConfig');
+
 
 const upload = multer({ storage: profileStorage });
 
