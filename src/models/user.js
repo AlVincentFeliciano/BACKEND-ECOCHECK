@@ -2,10 +2,12 @@ const mongoose = require('mongoose');
 const bcrypt = require('bcryptjs');
 
 const userSchema = new mongoose.Schema({
-  name: { type: String, required: true },  // ✅ Add this
+  name: { type: String, required: true },
   email: { type: String, required: true, unique: true },
   password: { type: String, required: true },
-  role: { type: String, default: 'user' }
+  role: { type: String, default: 'user' },
+  bio: { type: String, default: '' }, // ✅ New: user bio
+  profilePic: { type: String, default: '' } // ✅ New: profile picture URL
 });
 
 // Hash password before saving

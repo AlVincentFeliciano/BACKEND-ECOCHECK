@@ -31,7 +31,8 @@ exports.registerUser = async (req, res) => {
       data: {
         id: user._id,
         name: user.name,
-        email: user.email
+        email: user.email,
+        profilePic: user.profilePic || null
       }
     });
   } catch (err) {
@@ -52,7 +53,8 @@ exports.getUser = async (req, res) => {
       data: {
         id: user._id,
         name: user.name,
-        email: user.email
+        email: user.email,
+        profilePic: user.profilePic || null
       }
     });
   } catch (err) {
@@ -61,14 +63,20 @@ exports.getUser = async (req, res) => {
   }
 };
 
-// Update user by ID
+// ✅ Update user by ID (now supports profilePic upload)
 exports.updateUser = async (req, res) => {
   try {
     const { name } = req.body;
+    const updateFields = {};
+
+    if (name) updateFields.name = name;
+    if (req.file) {
+      updateFields.profilePic = `/uploads/profilePics/${req.file.filename}`;
+    }
 
     const user = await User.findByIdAndUpdate(
       req.params.id,
-      { name },
+      updateFields,
       { new: true }
     ).select('-password');
 
@@ -82,7 +90,8 @@ exports.updateUser = async (req, res) => {
       data: {
         id: user._id,
         name: user.name,
-        email: user.email
+        email: user.email,
+        profilePic: user.profilePic || null
       }
     });
   } catch (err) {
