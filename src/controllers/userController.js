@@ -112,10 +112,20 @@ exports.updateUser = async (req, res) => {
 // Get all users
 exports.getAllUsers = async (req, res) => {
   try {
-    const users = await User.find().select('-password'); // already returns points
-    res.json({ success: true, data: users });
+    const users = await User.find().select('-password');
+    const usersWithPoints = users.map(user => ({
+      id: user._id,
+      name: user.name,
+      email: user.email,
+      bio: user.bio,
+      profilePic: user.profilePic || null,
+      points: user.points || 0, // ✅ always default to 0
+    }));
+    res.json({ success: true, data: usersWithPoints });
   } catch (err) {
     console.error('❌ Get all users error:', err.message);
     res.status(500).json({ success: false, message: 'Server error' });
   }
 };
+
+
