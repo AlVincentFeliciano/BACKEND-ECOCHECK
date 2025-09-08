@@ -3,9 +3,15 @@ const router = express.Router();
 const multer = require('multer');
 const auth = require('../middleware/authMiddleware');
 
-const { registerUser, getUser, updateUser, getAllUsers } = require('../controllers/userController');
-const { cloudinary, profileStorage } = require('../config/cloudinaryConfig');
+const {
+  registerUser,
+  getUser,
+  updateUser,
+  getAllUsers,
+  changePassword, // ✅ import new controller
+} = require('../controllers/userController');
 
+const { cloudinary, profileStorage } = require('../config/cloudinaryConfig');
 
 const upload = multer({ storage: profileStorage });
 
@@ -20,5 +26,8 @@ router.get('/:id', auth, getUser);
 
 // Update user (bio + profilePic)
 router.put('/:id', auth, upload.single('profilePic'), updateUser);
+
+// ✅ Change password
+router.put('/change-password', auth, changePassword);
 
 module.exports = router;
