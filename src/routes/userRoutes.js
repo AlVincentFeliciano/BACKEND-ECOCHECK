@@ -21,13 +21,13 @@ router.post('/register', registerUser);
 // Get all users
 router.get('/', auth, getAllUsers);
 
+// ✅ Change password (must be BEFORE "/:id")
+router.put('/change-password', auth, changePassword);
+
 // Get a single user
 router.get('/:id', auth, getUser);
 
 // Update user (bio + profilePic)
 router.put('/:id', auth, upload.single('profilePic'), updateUser);
-
-// ✅ Change password
-router.put('/change-password', auth, changePassword);
 
 module.exports = router;
