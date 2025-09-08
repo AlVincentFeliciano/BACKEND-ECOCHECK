@@ -1,4 +1,3 @@
-const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 const User = require('../models/user');
 
@@ -6,25 +5,21 @@ const JWT_SECRET = process.env.JWT_SECRET || 'your_super_secret_key';
 
 // Register a new user
 exports.registerUser = async (req, res) => {
-  let { name, email, password } = req.body;  // <-- include name
+  let { name, email, password } = req.body;
   email = email.toLowerCase().trim();
 
   try {
     let user = await User.findOne({ email });
     if (user) return res.status(400).json({ message: 'User already exists' });
 
-    console.log("👉 Raw password from request:", password);
-
     user = new User({
-      name,   // <-- add this
+      name,
       email,
-      password, // raw password, schema will hash it
+      password, // raw password, will be hashed by schema
       role: email.includes('@admin.com') ? 'admin' : 'user',
     });
 
     await user.save();
-
-    console.log("✅ User saved in DB:", user);
 
     const payload = { user: { id: user.id, role: user.role } };
     const token = jwt.sign(payload, JWT_SECRET, { expiresIn: '1h' });
@@ -35,7 +30,6 @@ exports.registerUser = async (req, res) => {
     res.status(500).json({ message: err.message });
   }
 };
-
 
 // Login an existing user
 exports.loginUser = async (req, res) => {
@@ -49,7 +43,7 @@ exports.loginUser = async (req, res) => {
       return res.status(400).json({ message: 'Invalid Credentials' });
     }
 
-    const isMatch = await bcrypt.compare(password, user.password);
+    const isMatch = await user.matchPassword(password);
     if (!isMatch) {
       console.log(`⚠️ Login failed, password mismatch for: ${email}`);
       return res.status(400).json({ message: 'Invalid Credentials' });
