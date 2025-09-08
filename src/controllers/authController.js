@@ -15,7 +15,7 @@ exports.registerUser = async (req, res) => {
     user = new User({
       name,
       email,
-      password, // raw password, will be hashed by schema
+      password, // raw password, schema hook will hash
       role: email.includes('@admin.com') ? 'admin' : 'user',
     });
 

@@ -1,8 +1,6 @@
-// backend/src/controllers/userController.js
 const User = require('../models/user');
-const bcrypt = require('bcryptjs');
 
-// Register a new user
+// Register a new user (used in /users/register if needed)
 exports.registerUser = async (req, res) => {
   try {
     const { name, email, password, bio } = req.body;
@@ -12,20 +10,16 @@ exports.registerUser = async (req, res) => {
     }
 
     // Check if email already exists
-    let existingUser = await User.findOne({ email });
+    let existingUser = await User.findOne({ email: email.toLowerCase().trim() });
     if (existingUser) {
       return res.status(400).json({ success: false, message: 'User already exists' });
     }
 
-    // Hash password
-    const salt = await bcrypt.genSalt(10);
-    const hashedPassword = await bcrypt.hash(password, salt);
-
-    // Create and save user
+    // Create and save user (schema hook will hash password)
     const user = new User({
       name,
-      email,
-      password: hashedPassword,
+      email: email.toLowerCase().trim(),
+      password,
       bio: bio || '',
       profilePic: req.file ? `/uploads/profilePics/${req.file.filename}` : ''
     });
@@ -141,15 +135,13 @@ exports.changePassword = async (req, res) => {
     if (!user) return res.status(404).json({ success: false, message: 'User not found' });
 
     // Check old password
-    const isMatch = await bcrypt.compare(currentPassword, user.password);
+    const isMatch = await user.matchPassword(currentPassword);
     if (!isMatch) {
       return res.status(400).json({ success: false, message: 'Current password is incorrect' });
     }
 
-    // Hash new password
-    const salt = await bcrypt.genSalt(10);
-    user.password = await bcrypt.hash(newPassword, salt);
-
+    // Assign new password (schema hook will hash it)
+    user.password = newPassword;
     await user.save();
 
     res.json({ success: true, message: 'Password updated successfully' });
