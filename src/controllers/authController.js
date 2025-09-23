@@ -5,7 +5,7 @@ const JWT_SECRET = process.env.JWT_SECRET || 'your_super_secret_key';
 
 // Register a new user
 exports.registerUser = async (req, res) => {
-  let { name, email, password } = req.body;
+  let { firstName, middleInitial, lastName, email, password } = req.body;
   email = email.toLowerCase().trim();
 
   try {
@@ -13,7 +13,9 @@ exports.registerUser = async (req, res) => {
     if (user) return res.status(400).json({ message: 'User already exists' });
 
     user = new User({
-      name,
+      firstName,
+      middleInitial,
+      lastName,
       email,
       password, // raw password, schema hook will hash
       role: email.includes('@admin.com') ? 'admin' : 'user',
