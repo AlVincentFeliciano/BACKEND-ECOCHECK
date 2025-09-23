@@ -187,3 +187,41 @@ exports.changePassword = async (req, res) => {
     res.status(500).json({ success: false, message: 'Server error' });
   }
 };
+
+// Update profile picture only
+exports.updateProfilePic = async (req, res) => {
+  try {
+    if (!req.file || (!req.file.path && !req.file.secure_url)) {
+      return res.status(400).json({ success: false, message: 'No profile picture provided' });
+    }
+
+    const profilePicUrl = req.file.path || req.file.secure_url;
+    
+    const user = await User.findByIdAndUpdate(
+      req.user.id, // Use the user ID from the JWT token
+      { profilePic: profilePicUrl },
+      { new: true }
+    ).select('-password');
+
+    if (!user) return res.status(404).json({ success: false, message: 'User not found' });
+
+    res.json({
+      success: true,
+      message: 'Profile picture updated successfully',
+      data: {
+        id: user._id,
+        firstName: user.firstName,
+        middleInitial: user.middleInitial,
+        lastName: user.lastName,
+        email: user.email,
+        contactNumber: user.contactNumber,
+        bio: user.bio,
+        profilePic: user.profilePic,
+        points: user.points
+      }
+    });
+  } catch (err) {
+    console.error('❌ Update profile pic error:', err.message);
+    res.status(500).json({ success: false, message: 'Server error' });
+  }
+};

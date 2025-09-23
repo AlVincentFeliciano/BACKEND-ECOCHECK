@@ -9,6 +9,7 @@ const {
   updateUser,
   getAllUsers,
   changePassword, // ✅ import new controller
+  updateProfilePic, // ✅ import profile pic controller
 } = require('../controllers/userController');
 
 const { cloudinary, profileStorage } = require('../config/cloudinaryConfig');
@@ -23,6 +24,9 @@ router.get('/', auth, getAllUsers);
 
 // ✅ Change password (must be BEFORE "/:id")
 router.put('/change-password', auth, changePassword);
+
+// ✅ Update profile picture only
+router.put('/profile-pic', auth, upload.single('profilePic'), updateProfilePic);
 
 // Get a single user
 router.get('/:id', auth, getUser);
