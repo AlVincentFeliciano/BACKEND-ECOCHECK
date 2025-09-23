@@ -3,9 +3,9 @@ const User = require('../models/user');
 // Register new user
 exports.registerUser = async (req, res) => {
   try {
-    const { firstName, middleInitial, lastName, email, password, bio } = req.body;
+    const { firstName, middleInitial, lastName, email, contactNumber, password, bio } = req.body;
 
-    if (!firstName || !lastName || !email || !password) {
+    if (!firstName || !lastName || !email || !contactNumber || !password) {
       return res.status(400).json({ success: false, message: 'All required fields are missing' });
     }
 
@@ -14,11 +14,18 @@ exports.registerUser = async (req, res) => {
       return res.status(400).json({ success: false, message: 'User already exists' });
     }
 
+    // Check if contact number already exists
+    const existingContact = await User.findOne({ contactNumber });
+    if (existingContact) {
+      return res.status(400).json({ success: false, message: 'Contact number already registered' });
+    }
+
     const user = new User({
       firstName,
       middleInitial: middleInitial || '',
       lastName,
       email: email.toLowerCase().trim(),
+      contactNumber,
       password,
       bio: bio || '',
       profilePic: req.file ? `/uploads/profilePics/${req.file.filename}` : ''
@@ -35,6 +42,7 @@ exports.registerUser = async (req, res) => {
         middleInitial: user.middleInitial,
         lastName: user.lastName,
         email: user.email,
+        contactNumber: user.contactNumber,
         bio: user.bio,
         profilePic: user.profilePic,
         points: user.points
@@ -60,6 +68,7 @@ exports.getUser = async (req, res) => {
         middleInitial: user.middleInitial,
         lastName: user.lastName,
         email: user.email,
+        contactNumber: user.contactNumber,
         bio: user.bio,
         profilePic: user.profilePic || '',
         points: user.points || 0
@@ -74,12 +83,35 @@ exports.getUser = async (req, res) => {
 // Update user
 exports.updateUser = async (req, res) => {
   try {
-    const { firstName, middleInitial, lastName, bio } = req.body;
+    const { firstName, middleInitial, lastName, contactNumber, bio } = req.body;
     const updateFields = {};
 
     if (firstName) updateFields.firstName = firstName;
     if (middleInitial !== undefined) updateFields.middleInitial = middleInitial;
     if (lastName) updateFields.lastName = lastName;
+    if (contactNumber) {
+      // Validate contact number format if provided
+      if (!contactNumber.startsWith('+63') || contactNumber.length !== 13) {
+        return res.status(400).json({ 
+          success: false, 
+          message: 'Contact number must be in format +63XXXXXXXXXX (13 characters)' 
+        });
+      }
+      
+      // Check if contact number already exists (excluding current user)
+      const existingContact = await User.findOne({ 
+        contactNumber, 
+        _id: { $ne: req.params.id } 
+      });
+      if (existingContact) {
+        return res.status(400).json({ 
+          success: false, 
+          message: 'Contact number already registered by another user' 
+        });
+      }
+      
+      updateFields.contactNumber = contactNumber;
+    }
     if (bio !== undefined) updateFields.bio = bio;
     if (req.file && req.file.path) updateFields.profilePic = req.file.path;
 
@@ -96,6 +128,7 @@ exports.updateUser = async (req, res) => {
         middleInitial: user.middleInitial,
         lastName: user.lastName,
         email: user.email,
+        contactNumber: user.contactNumber,
         bio: user.bio,
         profilePic: user.profilePic,
         points: user.points
@@ -117,6 +150,7 @@ exports.getAllUsers = async (req, res) => {
       middleInitial: u.middleInitial,
       lastName: u.lastName,
       email: u.email,
+      contactNumber: u.contactNumber,
       bio: u.bio,
       profilePic: u.profilePic || '',
       points: u.points || 0
