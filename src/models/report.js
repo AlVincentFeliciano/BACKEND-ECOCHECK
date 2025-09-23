@@ -2,10 +2,14 @@ const mongoose = require('mongoose');
 
 const reportSchema = new mongoose.Schema(
   {
-    name: String,
+    name: String, // This will be deprecated in favor of firstName, middleName, lastName
+    firstName: String,
+    middleName: String,
+    lastName: String,
     contact: String,
     description: String,
     location: String,
+    landmark: String,
     latitude: Number,
     longitude: Number,
     photoUrl: String,

@@ -3,7 +3,18 @@ const Report = require('../models/report');
 // Create a new report
 const createReport = async (req, res) => {
   try {
-    const { name, contact, description, location, latitude, longitude } = req.body;
+    const { 
+      name, 
+      firstName, 
+      middleName, 
+      lastName, 
+      contact, 
+      description, 
+      location, 
+      landmark, 
+      latitude, 
+      longitude 
+    } = req.body;
 
     if (!req.file) {
       return res.status(400).json({ error: 'Photo is required' });
@@ -12,11 +23,22 @@ const createReport = async (req, res) => {
     // ✅ Cloudinary automatically provides a secure URL
     const photoUrl = req.file.path;
 
+    // Create display name from individual name fields for backward compatibility
+    let displayName = name;
+    if (firstName || lastName) {
+      const nameComponents = [firstName, middleName, lastName].filter(Boolean);
+      displayName = nameComponents.join(' ') || name;
+    }
+
     const newReport = await Report.create({
-      name,
+      name: displayName,           // For backward compatibility
+      firstName,
+      middleName,
+      lastName,
       contact,
       description,
       location,
+      landmark,
       latitude,
       longitude,
       photoUrl,       // <-- saved from Cloudinary
