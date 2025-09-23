@@ -28,7 +28,7 @@ exports.registerUser = async (req, res) => {
       contactNumber,
       password,
       bio: bio || '',
-      profilePic: req.file ? `/uploads/profilePics/${req.file.filename}` : ''
+      profilePic: req.file ? (req.file.path || req.file.secure_url) : ''  // ✅ Use Cloudinary URL
     });
 
     await user.save();
@@ -113,7 +113,9 @@ exports.updateUser = async (req, res) => {
       updateFields.contactNumber = contactNumber;
     }
     if (bio !== undefined) updateFields.bio = bio;
-    if (req.file && req.file.path) updateFields.profilePic = req.file.path;
+    if (req.file && (req.file.path || req.file.secure_url)) {
+      updateFields.profilePic = req.file.path || req.file.secure_url;  // ✅ Use Cloudinary URL
+    }
 
     const user = await User.findByIdAndUpdate(req.params.id, updateFields, { new: true }).select('-password');
 
