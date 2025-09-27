@@ -4,7 +4,7 @@ const nodemailer = require('nodemailer');
 class EmailService {
   constructor() {
     // Using Gmail SMTP (free) - you can also use other providers
-    this.transporter = nodemailer.createTransporter({
+    this.transporter = nodemailer.createTransport({
       service: 'gmail',
       auth: {
         user: process.env.EMAIL_USER || 'your-email@gmail.com', // Add to .env
