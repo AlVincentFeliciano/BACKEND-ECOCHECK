@@ -3,7 +3,7 @@ const JWT_SECRET = process.env.JWT_SECRET || 'your_super_secret_key';
 
 // Middleware to verify JWT token
 const authMiddleware = (req, res, next) => {
-  const authHeader = req.header('Authorization');
+  const authHeader = req.headers['authorization']; // ✅ use headers['authorization']
   if (!authHeader || !authHeader.startsWith('Bearer ')) {
     return res.status(401).json({ msg: 'No token, authorization denied' });
   }

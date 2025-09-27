@@ -1,15 +1,15 @@
-// backend/src/routes/reportRoutes.js
 const express = require('express');
 const router = express.Router();
-const { createReport, getReports, updateReportStatus } = require('../controllers/reportController');
 const multer = require('multer');
-const auth = require('../middleware/authMiddleware');
-const { storage } = require('../config/cloudinaryConfig'); // ✅ use Cloudinary storage
 
-// Multer setup (now with Cloudinary)
+const { createReport, getReports, updateReportStatus } = require('../controllers/reportController');
+const auth = require('../middleware/authMiddleware'); // ✅ auth middleware
+const { storage } = require('../config/cloudinaryConfig'); // ✅ Cloudinary storage
+
+// Multer setup (Cloudinary storage)
 const upload = multer({ storage });
 
-// Routes (protected with auth)
+// Routes (all protected by auth)
 router.post('/', auth, upload.single('photo'), createReport);
 router.get('/', auth, getReports);
 router.put('/:id/status', auth, updateReportStatus);
