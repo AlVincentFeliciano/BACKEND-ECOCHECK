@@ -9,7 +9,7 @@ const userSchema = new mongoose.Schema({
   contactNumber: { type: String, required: true },
   password: { type: String, required: true },
 
-  // ✅ Only allow specific roles
+  // Only allow specific roles
   role: { 
     type: String, 
     enum: ['superadmin', 'admin', 'user'], 
@@ -18,15 +18,10 @@ const userSchema = new mongoose.Schema({
 
   bio: { type: String, default: '' },
   profilePic: { type: String, default: '' },
-  points: { type: Number, default: 0 },
-
-  // ✅ Add reset fields for forgot password feature
-  resetCode: { type: String, default: null },
-  resetCodeExpires: { type: Date, default: null }
-
+  points: { type: Number, default: 0 }
 }, { timestamps: true });
 
-// ✅ Hash password before saving
+// Hash password before saving
 userSchema.pre('save', async function(next) {
   if (!this.isModified('password')) return next();
   const salt = await bcrypt.genSalt(10);
@@ -34,7 +29,7 @@ userSchema.pre('save', async function(next) {
   next();
 });
 
-// ✅ Compare password
+// Compare password
 userSchema.methods.matchPassword = async function(enteredPassword) {
   return await bcrypt.compare(enteredPassword, this.password);
 };
