@@ -1,9 +1,18 @@
 const jwt = require('jsonwebtoken');
 const User = require('../models/user');
-const SMSService = require('../services/freeSMSService');
 
 const JWT_SECRET = process.env.JWT_SECRET || 'your_super_secret_key';
-const smsService = new SMSService();
+
+// Initialize SMS service with error handling
+let smsService = null;
+try {
+  const SMSService = require('../services/freeSMSService');
+  smsService = new SMSService();
+  console.log('✅ SMS Service initialized successfully');
+} catch (error) {
+  console.error('❌ Failed to initialize SMS Service:', error.message);
+  console.log('📧 Forgot password will use fallback mode');
+}
 
 // Register a new user
 exports.registerUser = async (req, res) => {
@@ -218,17 +227,31 @@ exports.forgotPassword = async (req, res) => {
     // Send SMS with verification code
     try {
       const message = `Your EcoCheck verification code is: ${resetCode}. This code expires in 10 minutes. Do not share this code with anyone.`;
-      await smsService.sendSMS(contactNumber, message);
+      
+      if (smsService) {
+        await smsService.sendSMS(contactNumber, message);
+      } else {
+        // Fallback when SMS service is not available
+        console.log('🔧 SMS SERVICE FALLBACK - SMS service not available');
+        console.log(`📱 Contact: ${contactNumber}`);
+        console.log(`🔢 Verification Code: ${resetCode}`);
+        console.log(`💬 Message: ${message}`);
+        console.log('⚠️ User needs to check server logs for verification code');
+      }
       
       res.json({
         success: true,
-        message: 'Verification code sent to your mobile number'
+        message: 'Verification code sent to your mobile number',
+        ...((!smsService) && { 
+          fallback: true, 
+          code: resetCode,
+          note: 'SMS service unavailable - code provided for testing' 
+        })
       });
     } catch (smsError) {
       console.error('❌ SMS sending failed:', smsError.message);
       
       // If SMS fails, still provide a fallback response
-      // You might want to revert the database changes here
       user.resetCode = null;
       user.resetCodeExpires = null;
       await user.save();

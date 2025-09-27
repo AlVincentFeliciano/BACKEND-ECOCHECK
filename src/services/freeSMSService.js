@@ -1,4 +1,4 @@
-// backend/src/services/smsService.js
+// backend/src/services/freeSMSService.js
 const axios = require('axios');
 
 // Free SMS Service using TextBelt (1 SMS per day limit)
