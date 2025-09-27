@@ -8,14 +8,7 @@ const userSchema = new mongoose.Schema({
   email: { type: String, required: true, unique: true },
   contactNumber: { type: String, required: true },
   password: { type: String, required: true },
-
-  // Only allow specific roles
-  role: { 
-    type: String, 
-    enum: ['superadmin', 'admin', 'user'], 
-    default: 'user' 
-  },
-
+  role: { type: String, default: 'user' },
   bio: { type: String, default: '' },
   profilePic: { type: String, default: '' },
   points: { type: Number, default: 0 }
