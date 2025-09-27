@@ -1,16 +1,24 @@
-// backend/src/routes/authRoutes.js
 const express = require('express');
 const router = express.Router();
 
 // Import controller functions
-const { registerUser, loginUser, registerAdmin, getAdmins, deleteAdmin } = require('../controllers/authController');
+const {
+  registerUser,
+  loginUser,
+  registerAdmin,
+  getAdmins,
+  deleteAdmin,
+  forgotPassword // ✅ added
+} = require('../controllers/authController');
+
 const authMiddleware = require('../middleware/authMiddleware');
 
-// Routes
+// ✅ Public routes
 router.post('/register', registerUser);
 router.post('/login', loginUser);
+router.post('/forgot-password', forgotPassword); // ✅ added
 
-// Admin management routes (protected)
+// ✅ Protected routes
 router.post('/register-admin', authMiddleware, registerAdmin);
 router.get('/admins', authMiddleware, getAdmins);
 router.delete('/admin/:adminId', authMiddleware, deleteAdmin);

@@ -3,7 +3,7 @@ const User = require('../models/user');
 // Register new user
 exports.registerUser = async (req, res) => {
   try {
-    const { firstName, middleInitial, lastName, email, contactNumber, password, bio } = req.body;
+    const { firstName, middleInitial, lastName, email, contactNumber, password, bio, role } = req.body;
 
     if (!firstName || !lastName || !email || !contactNumber || !password) {
       return res.status(400).json({ success: false, message: 'All required fields are missing' });
@@ -14,7 +14,6 @@ exports.registerUser = async (req, res) => {
       return res.status(400).json({ success: false, message: 'User already exists' });
     }
 
-    // Check if contact number already exists
     const existingContact = await User.findOne({ contactNumber });
     if (existingContact) {
       return res.status(400).json({ success: false, message: 'Contact number already registered' });
@@ -28,7 +27,8 @@ exports.registerUser = async (req, res) => {
       contactNumber,
       password,
       bio: bio || '',
-      profilePic: req.file ? (req.file.path || req.file.secure_url) : ''  // ✅ Use Cloudinary URL
+      profilePic: req.file ? (req.file.path || req.file.secure_url) : '',
+      role: role || 'user'  // 👈 default "user", but can be set if allowed
     });
 
     await user.save();
@@ -45,11 +45,61 @@ exports.registerUser = async (req, res) => {
         contactNumber: user.contactNumber,
         bio: user.bio,
         profilePic: user.profilePic,
+        role: user.role,   // 👈 added role
         points: user.points
       }
     });
   } catch (err) {
     console.error('❌ Register error:', err.message);
+    res.status(500).json({ success: false, message: 'Server error' });
+  }
+};
+
+// Create new admin (only superadmin can do this)
+exports.createAdmin = async (req, res) => {
+  try {
+    // check if logged-in user is superadmin
+    if (req.user.role !== 'superadmin') {
+      return res.status(403).json({ success: false, message: 'Only superadmin can create admins' });
+    }
+
+    const { firstName, middleInitial, lastName, email, contactNumber, password, bio } = req.body;
+
+    if (!firstName || !lastName || !email || !contactNumber || !password) {
+      return res.status(400).json({ success: false, message: 'All required fields are required' });
+    }
+
+    const existingUser = await User.findOne({ email: email.toLowerCase().trim() });
+    if (existingUser) {
+      return res.status(400).json({ success: false, message: 'User already exists' });
+    }
+
+    const user = new User({
+      firstName,
+      middleInitial: middleInitial || '',
+      lastName,
+      email: email.toLowerCase().trim(),
+      contactNumber,
+      password,
+      bio: bio || '',
+      role: 'admin'   // 👈 force "admin"
+    });
+
+    await user.save();
+
+    res.status(201).json({
+      success: true,
+      message: 'Admin created successfully',
+      data: {
+        id: user._id,
+        firstName: user.firstName,
+        lastName: user.lastName,
+        email: user.email,
+        role: user.role
+      }
+    });
+  } catch (err) {
+    console.error('❌ Create admin error:', err.message);
     res.status(500).json({ success: false, message: 'Server error' });
   }
 };
@@ -71,6 +121,7 @@ exports.getUser = async (req, res) => {
         contactNumber: user.contactNumber,
         bio: user.bio,
         profilePic: user.profilePic || '',
+        role: user.role,   // 👈 added role
         points: user.points || 0
       }
     });
@@ -90,15 +141,13 @@ exports.updateUser = async (req, res) => {
     if (middleInitial !== undefined) updateFields.middleInitial = middleInitial;
     if (lastName) updateFields.lastName = lastName;
     if (contactNumber) {
-      // Validate contact number format if provided
       if (!contactNumber.startsWith('+63') || contactNumber.length !== 13) {
         return res.status(400).json({ 
           success: false, 
           message: 'Contact number must be in format +63XXXXXXXXXX (13 characters)' 
         });
       }
-      
-      // Check if contact number already exists (excluding current user)
+
       const existingContact = await User.findOne({ 
         contactNumber, 
         _id: { $ne: req.params.id } 
@@ -109,12 +158,12 @@ exports.updateUser = async (req, res) => {
           message: 'Contact number already registered by another user' 
         });
       }
-      
+
       updateFields.contactNumber = contactNumber;
     }
     if (bio !== undefined) updateFields.bio = bio;
     if (req.file && (req.file.path || req.file.secure_url)) {
-      updateFields.profilePic = req.file.path || req.file.secure_url;  // ✅ Use Cloudinary URL
+      updateFields.profilePic = req.file.path || req.file.secure_url;
     }
 
     const user = await User.findByIdAndUpdate(req.params.id, updateFields, { new: true }).select('-password');
@@ -133,6 +182,7 @@ exports.updateUser = async (req, res) => {
         contactNumber: user.contactNumber,
         bio: user.bio,
         profilePic: user.profilePic,
+        role: user.role,   // 👈 added role
         points: user.points
       }
     });
@@ -155,6 +205,7 @@ exports.getAllUsers = async (req, res) => {
       contactNumber: u.contactNumber,
       bio: u.bio,
       profilePic: u.profilePic || '',
+      role: u.role,   // 👈 added role
       points: u.points || 0
     }));
     res.json({ success: true, data });
@@ -198,7 +249,7 @@ exports.updateProfilePic = async (req, res) => {
     const profilePicUrl = req.file.path || req.file.secure_url;
     
     const user = await User.findByIdAndUpdate(
-      req.user.id, // Use the user ID from the JWT token
+      req.user.id,
       { profilePic: profilePicUrl },
       { new: true }
     ).select('-password');
@@ -217,6 +268,7 @@ exports.updateProfilePic = async (req, res) => {
         contactNumber: user.contactNumber,
         bio: user.bio,
         profilePic: user.profilePic,
+        role: user.role,   // 👈 added role
         points: user.points
       }
     });
