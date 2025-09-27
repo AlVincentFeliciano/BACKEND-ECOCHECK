@@ -30,7 +30,7 @@ exports.registerUser = async (req, res) => {
       lastName: user.lastName,
       email: user.email,
       contactNumber: user.contactNumber,
-      role: user.role,
+      role: user.role, // default: "user"
       token: generateToken(user._id),
     });
   } catch (error) {
@@ -65,7 +65,20 @@ exports.loginUser = async (req, res) => {
   }
 };
 
-// ✅ Register admin (Protected)
+// ✅ Get current logged-in user
+exports.getMe = async (req, res) => {
+  try {
+    const user = await User.findById(req.user.id).select('-password');
+    if (!user) return res.status(404).json({ message: 'User not found' });
+
+    res.json(user);
+  } catch (error) {
+    console.error('GetMe Error:', error.message);
+    res.status(500).json({ message: 'Server error while fetching user' });
+  }
+};
+
+// ✅ Register admin (superadmin only should call this)
 exports.registerAdmin = async (req, res) => {
   try {
     const { firstName, lastName, email, contactNumber, password } = req.body;
@@ -89,7 +102,7 @@ exports.registerAdmin = async (req, res) => {
   }
 };
 
-// ✅ Get all admins
+// ✅ Get all admins (superadmin can see admins)
 exports.getAdmins = async (req, res) => {
   try {
     const admins = await User.find({ role: 'admin' }).select('-password');
@@ -100,7 +113,7 @@ exports.getAdmins = async (req, res) => {
   }
 };
 
-// ✅ Delete an admin
+// ✅ Delete an admin (superadmin only)
 exports.deleteAdmin = async (req, res) => {
   try {
     const { adminId } = req.params;
@@ -139,7 +152,7 @@ exports.forgotPassword = async (req, res) => {
     user.resetCodeExpires = Date.now() + 10 * 60 * 1000; // expires in 10 mins
     await user.save();
 
-    // Log reset code (simulating SMS)
+    // Log reset code (mock SMS)
     console.log(`📱 Reset code for ${contactNumber}: ${resetCode}`);
 
     res.status(200).json({
