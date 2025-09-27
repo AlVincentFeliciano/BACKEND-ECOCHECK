@@ -3,14 +3,14 @@ const User = require('../models/user');
 
 const JWT_SECRET = process.env.JWT_SECRET || 'your_super_secret_key';
 
-// Initialize SMS service with error handling
-let smsService = null;
+// Initialize Email service with error handling
+let emailService = null;
 try {
-  const SMSService = require('../services/freeSMSService');
-  smsService = new SMSService();
-  console.log('✅ SMS Service initialized successfully');
+  const EmailService = require('../services/emailService');
+  emailService = new EmailService();
+  console.log('✅ Email Service initialized successfully');
 } catch (error) {
-  console.error('❌ Failed to initialize SMS Service:', error.message);
+  console.error('❌ Failed to initialize Email Service:', error.message);
   console.log('📧 Forgot password will use fallback mode');
 }
 
@@ -193,19 +193,19 @@ exports.deleteAdmin = async (req, res) => {
   }
 };
 
-// Forgot Password - Send SMS verification code
+// Forgot Password - Send Email verification code
 exports.forgotPassword = async (req, res) => {
   try {
-    const { contactNumber } = req.body;
+    const { email } = req.body;
 
-    if (!contactNumber) {
-      return res.status(400).json({ message: 'Contact number is required' });
+    if (!email) {
+      return res.status(400).json({ message: 'Email is required' });
     }
 
-    // Find user by contact number
-    const user = await User.findOne({ contactNumber: contactNumber.trim() });
+    // Find user by email
+    const user = await User.findOne({ email: email.toLowerCase().trim() });
     if (!user) {
-      return res.status(404).json({ message: 'No account found with this contact number' });
+      return res.status(404).json({ message: 'No account found with this email address' });
     }
 
     // Check if user is active
@@ -224,41 +224,38 @@ exports.forgotPassword = async (req, res) => {
     user.resetCodeExpires = resetCodeExpires;
     await user.save();
 
-    // Send SMS with verification code
+    // Send Email with verification code
     try {
-      const message = `Your EcoCheck verification code is: ${resetCode}. This code expires in 10 minutes. Do not share this code with anyone.`;
-      
-      if (smsService) {
-        await smsService.sendSMS(contactNumber, message);
+      if (emailService) {
+        await emailService.sendPasswordResetEmail(user.email, resetCode);
       } else {
-        // Fallback when SMS service is not available
-        console.log('🔧 SMS SERVICE FALLBACK - SMS service not available');
-        console.log(`📱 Contact: ${contactNumber}`);
+        // Fallback when email service is not available
+        console.log('🔧 EMAIL SERVICE FALLBACK - Email service not available');
+        console.log(`� Email: ${user.email}`);
         console.log(`🔢 Verification Code: ${resetCode}`);
-        console.log(`💬 Message: ${message}`);
         console.log('⚠️ User needs to check server logs for verification code');
       }
       
       res.json({
         success: true,
-        message: 'Verification code sent to your mobile number',
-        ...((!smsService) && { 
+        message: 'Verification code sent to your email address',
+        ...((!emailService) && { 
           fallback: true, 
           code: resetCode,
-          note: 'SMS service unavailable - code provided for testing' 
+          note: 'Email service unavailable - code provided for testing' 
         })
       });
-    } catch (smsError) {
-      console.error('❌ SMS sending failed:', smsError.message);
+    } catch (emailError) {
+      console.error('❌ Email sending failed:', emailError.message);
       
-      // If SMS fails, still provide a fallback response
+      // If email fails, still provide a fallback response
       user.resetCode = null;
       user.resetCodeExpires = null;
       await user.save();
       
       return res.status(500).json({ 
-        message: 'Unable to send SMS. Please try again later or contact support.',
-        error: 'SMS_SEND_FAILED'
+        message: 'Unable to send email. Please try again later or contact support.',
+        error: 'EMAIL_SEND_FAILED'
       });
     }
 
@@ -271,20 +268,20 @@ exports.forgotPassword = async (req, res) => {
 // Reset Password - Verify code and update password
 exports.resetPassword = async (req, res) => {
   try {
-    const { contactNumber, resetCode, newPassword } = req.body;
+    const { email, resetCode, newPassword } = req.body;
 
-    if (!contactNumber || !resetCode || !newPassword) {
-      return res.status(400).json({ message: 'Contact number, verification code, and new password are required' });
+    if (!email || !resetCode || !newPassword) {
+      return res.status(400).json({ message: 'Email, verification code, and new password are required' });
     }
 
     if (newPassword.length < 6) {
       return res.status(400).json({ message: 'Password must be at least 6 characters long' });
     }
 
-    // Find user by contact number
-    const user = await User.findOne({ contactNumber: contactNumber.trim() });
+    // Find user by email
+    const user = await User.findOne({ email: email.toLowerCase().trim() });
     if (!user) {
-      return res.status(404).json({ message: 'No account found with this contact number' });
+      return res.status(404).json({ message: 'No account found with this email address' });
     }
 
     // Check if reset code exists and hasn't expired
