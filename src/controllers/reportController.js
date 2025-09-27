@@ -1,29 +1,21 @@
 const Report = require('../models/report');
+const User = require('../models/user');
 
 // Create a new report
 const createReport = async (req, res) => {
   try {
     const { 
-      name, 
-      firstName, 
-      middleName, 
-      lastName, 
-      contact, 
-      description, 
-      location, 
-      landmark, 
-      latitude, 
-      longitude 
+      name, firstName, middleName, lastName, 
+      contact, description, location, landmark, latitude, longitude 
     } = req.body;
 
     if (!req.file) {
       return res.status(400).json({ error: 'Photo is required' });
     }
 
-    // ✅ Cloudinary automatically provides a secure URL
-    const photoUrl = req.file.path;
+    const photoUrl = req.file.path; // Cloudinary URL
 
-    // Create display name from individual name fields for backward compatibility
+    // Create display name from individual name fields
     let displayName = name;
     if (firstName || lastName) {
       const nameComponents = [firstName, middleName, lastName].filter(Boolean);
@@ -31,7 +23,7 @@ const createReport = async (req, res) => {
     }
 
     const newReport = await Report.create({
-      name: displayName,           // For backward compatibility
+      name: displayName,
       firstName,
       middleName,
       lastName,
@@ -41,7 +33,7 @@ const createReport = async (req, res) => {
       landmark,
       latitude,
       longitude,
-      photoUrl,       // <-- saved from Cloudinary
+      photoUrl,
       status: 'Pending',
       user: req.user.id,
     });
@@ -57,15 +49,11 @@ const createReport = async (req, res) => {
 const getReports = async (req, res) => {
   try {
     let reports;
-
-    if (req.user.role === 'admin') {
-      // Admin sees all reports
-      reports = await Report.find().populate('user', 'name email');
+    if (req.user.role === 'admin' || req.user.role === 'superadmin') {
+      reports = await Report.find().populate('user', 'firstName lastName email');
     } else {
-      // Regular users see only their own reports
-      reports = await Report.find({ user: req.user.id }).populate('user', 'name email');
+      reports = await Report.find({ user: req.user.id }).populate('user', 'firstName lastName email');
     }
-
     res.json(reports);
   } catch (err) {
     console.error(err);
@@ -74,14 +62,12 @@ const getReports = async (req, res) => {
 };
 
 // Update report status
-const User = require('../models/user'); // add this at top
-
 const updateReportStatus = async (req, res) => {
   try {
     const { id } = req.params;
     const { status } = req.body;
 
-    const validStatuses = ['Pending', 'On Going', 'Resolved'];
+    const validStatuses = ['Pending', 'In Progress', 'Resolved'];
     if (!validStatuses.includes(status)) {
       return res.status(400).json({ error: 'Invalid status value' });
     }
@@ -89,15 +75,15 @@ const updateReportStatus = async (req, res) => {
     const report = await Report.findById(id);
     if (!report) return res.status(404).json({ error: 'Report not found' });
 
-    if (req.user.role !== 'admin' && report.user.toString() !== req.user.id) {
+    if (req.user.role !== 'admin' && req.user.role !== 'superadmin' && report.user.toString() !== req.user.id) {
       return res.status(403).json({ error: 'Unauthorized' });
     }
 
-    // ✅ Award points if report is resolved by admin
+    // Award points if report is resolved
     if (status === 'Resolved' && report.status !== 'Resolved') {
       const user = await User.findById(report.user);
       if (user) {
-        user.points += 10; // or any points value
+        user.points += 10;
         await user.save();
       }
     }
@@ -111,7 +97,6 @@ const updateReportStatus = async (req, res) => {
     res.status(500).json({ error: 'Server error' });
   }
 };
-
 
 module.exports = {
   createReport,
