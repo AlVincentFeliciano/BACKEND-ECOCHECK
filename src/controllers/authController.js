@@ -181,3 +181,103 @@ exports.deleteAdmin = async (req, res) => {
     res.status(500).json({ error: 'Server error while deleting admin' });
   }
 };
+
+// Forgot Password - Send SMS verification code
+exports.forgotPassword = async (req, res) => {
+  try {
+    const { contactNumber } = req.body;
+
+    if (!contactNumber) {
+      return res.status(400).json({ message: 'Contact number is required' });
+    }
+
+    // Find user by contact number
+    const user = await User.findOne({ contactNumber: contactNumber.trim() });
+    if (!user) {
+      return res.status(404).json({ message: 'No account found with this contact number' });
+    }
+
+    // Check if user is active
+    if (user.isActive === false) {
+      return res.status(403).json({ message: 'Account is deactivated. Please contact support.' });
+    }
+
+    // Generate 6-digit verification code
+    const resetCode = Math.floor(100000 + Math.random() * 900000).toString();
+    
+    // Set expiration time (10 minutes from now)
+    const resetCodeExpires = new Date(Date.now() + 10 * 60 * 1000);
+
+    // Update user with reset code
+    user.resetCode = resetCode;
+    user.resetCodeExpires = resetCodeExpires;
+    await user.save();
+
+    // TODO: Integrate with SMS service (Twilio, etc.)
+    // For now, we'll log the code for testing purposes
+    console.log(`🔐 SMS Verification Code for ${contactNumber}: ${resetCode}`);
+    
+    // In production, you would send SMS here:
+    // await sendSMS(contactNumber, `Your EcoCheck verification code is: ${resetCode}. This code expires in 10 minutes.`);
+
+    res.json({
+      success: true,
+      message: 'Verification code sent to your mobile number',
+      // Remove this in production - only for testing
+      resetCode: process.env.NODE_ENV === 'development' ? resetCode : undefined
+    });
+
+  } catch (err) {
+    console.error('❌ Forgot password error:', err.message);
+    res.status(500).json({ message: 'Server error. Please try again later.' });
+  }
+};
+
+// Reset Password - Verify code and update password
+exports.resetPassword = async (req, res) => {
+  try {
+    const { contactNumber, resetCode, newPassword } = req.body;
+
+    if (!contactNumber || !resetCode || !newPassword) {
+      return res.status(400).json({ message: 'Contact number, verification code, and new password are required' });
+    }
+
+    if (newPassword.length < 6) {
+      return res.status(400).json({ message: 'Password must be at least 6 characters long' });
+    }
+
+    // Find user by contact number
+    const user = await User.findOne({ contactNumber: contactNumber.trim() });
+    if (!user) {
+      return res.status(404).json({ message: 'No account found with this contact number' });
+    }
+
+    // Check if reset code exists and hasn't expired
+    if (!user.resetCode || !user.resetCodeExpires) {
+      return res.status(400).json({ message: 'No active password reset request found' });
+    }
+
+    if (user.resetCode !== resetCode.trim()) {
+      return res.status(400).json({ message: 'Invalid verification code' });
+    }
+
+    if (new Date() > user.resetCodeExpires) {
+      return res.status(400).json({ message: 'Verification code has expired. Please request a new one.' });
+    }
+
+    // Update password and clear reset fields
+    user.password = newPassword; // Will be hashed by pre-save middleware
+    user.resetCode = null;
+    user.resetCodeExpires = null;
+    await user.save();
+
+    res.json({
+      success: true,
+      message: 'Password has been reset successfully. You can now login with your new password.'
+    });
+
+  } catch (err) {
+    console.error('❌ Reset password error:', err.message);
+    res.status(500).json({ message: 'Server error. Please try again later.' });
+  }
+};
