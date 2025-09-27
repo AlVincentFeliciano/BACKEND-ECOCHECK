@@ -67,7 +67,7 @@ const updateReportStatus = async (req, res) => {
     const { id } = req.params;
     const { status } = req.body;
 
-    const validStatuses = ['Pending', 'In Progress', 'Resolved'];
+    const validStatuses = ['Pending', 'On Going', 'Resolved'];
     if (!validStatuses.includes(status)) {
       return res.status(400).json({ error: 'Invalid status value' });
     }
