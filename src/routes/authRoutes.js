@@ -4,7 +4,7 @@ const router = express.Router();
 
 // Import controller functions
 const { registerUser, loginUser, registerAdmin, getAdmins, deleteAdmin } = require('../controllers/authController');
-const authMiddleware = require('../middleware/authMiddleware');
+const { authMiddleware } = require('../middleware/authMiddleware'); // ✅ destructure here
 
 // Routes
 router.post('/register', registerUser);
