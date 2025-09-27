@@ -1,7 +1,9 @@
 const jwt = require('jsonwebtoken');
 const User = require('../models/user');
+const SMSService = require('../services/freeSMSService');
 
 const JWT_SECRET = process.env.JWT_SECRET || 'your_super_secret_key';
+const smsService = new SMSService();
 
 // Register a new user
 exports.registerUser = async (req, res) => {
@@ -213,19 +215,29 @@ exports.forgotPassword = async (req, res) => {
     user.resetCodeExpires = resetCodeExpires;
     await user.save();
 
-    // TODO: Integrate with SMS service (Twilio, etc.)
-    // For now, we'll log the code for testing purposes
-    console.log(`🔐 SMS Verification Code for ${contactNumber}: ${resetCode}`);
-    
-    // In production, you would send SMS here:
-    // await sendSMS(contactNumber, `Your EcoCheck verification code is: ${resetCode}. This code expires in 10 minutes.`);
-
-    res.json({
-      success: true,
-      message: 'Verification code sent to your mobile number',
-      // Remove this in production - only for testing
-      resetCode: process.env.NODE_ENV === 'development' ? resetCode : undefined
-    });
+    // Send SMS with verification code
+    try {
+      const message = `Your EcoCheck verification code is: ${resetCode}. This code expires in 10 minutes. Do not share this code with anyone.`;
+      await smsService.sendSMS(contactNumber, message);
+      
+      res.json({
+        success: true,
+        message: 'Verification code sent to your mobile number'
+      });
+    } catch (smsError) {
+      console.error('❌ SMS sending failed:', smsError.message);
+      
+      // If SMS fails, still provide a fallback response
+      // You might want to revert the database changes here
+      user.resetCode = null;
+      user.resetCodeExpires = null;
+      await user.save();
+      
+      return res.status(500).json({ 
+        message: 'Unable to send SMS. Please try again later or contact support.',
+        error: 'SMS_SEND_FAILED'
+      });
+    }
 
   } catch (err) {
     console.error('❌ Forgot password error:', err.message);
