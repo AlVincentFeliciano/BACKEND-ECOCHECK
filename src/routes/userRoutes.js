@@ -1,8 +1,7 @@
 const express = require('express');
 const router = express.Router();
 const multer = require('multer');
-const auth = require('../middleware/authMiddleware');
-const { isSuperAdmin } = require('../middleware/roleMiddleware'); // ✅ check role
+const { authMiddleware, isSuperAdmin } = require('../middleware/authMiddleware'); // ✅ combined middlewares
 
 const {
   registerUser,
@@ -21,21 +20,21 @@ const upload = multer({ storage: profileStorage });
 router.post('/register', registerUser);
 
 // ✅ Superadmin can create new admins
-router.post('/create-admin', auth, isSuperAdmin, createAdmin);
+router.post('/create-admin', authMiddleware, isSuperAdmin, createAdmin);
 
 // Get all users
-router.get('/', auth, getAllUsers);
+router.get('/', authMiddleware, getAllUsers);
 
 // Change password
-router.put('/change-password', auth, changePassword);
+router.put('/change-password', authMiddleware, changePassword);
 
 // Update profile picture only
-router.put('/profile-pic', auth, upload.single('profilePic'), updateProfilePic);
+router.put('/profile-pic', authMiddleware, upload.single('profilePic'), updateProfilePic);
 
 // Get a single user
-router.get('/:id', auth, getUser);
+router.get('/:id', authMiddleware, getUser);
 
 // Update user (bio + profilePic)
-router.put('/:id', auth, upload.single('profilePic'), updateUser);
+router.put('/:id', authMiddleware, upload.single('profilePic'), updateUser);
 
 module.exports = router;
