@@ -9,7 +9,6 @@ exports.registerUser = async (req, res) => {
       return res.status(400).json({ success: false, message: 'All required fields are missing' });
     }
 
-    // ✅ Validate contact number (Philippines format: 11 digits, starts with 09)
     if (!/^09\d{9}$/.test(contactNumber)) {
       return res.status(400).json({ success: false, message: 'Contact number must be 11 digits and start with 09' });
     }
@@ -19,7 +18,6 @@ exports.registerUser = async (req, res) => {
       return res.status(400).json({ success: false, message: 'User already exists' });
     }
 
-    // Check if contact number already exists
     const existingContact = await User.findOne({ contactNumber });
     if (existingContact) {
       return res.status(400).json({ success: false, message: 'Contact number already registered' });
@@ -33,7 +31,7 @@ exports.registerUser = async (req, res) => {
       contactNumber,
       password,
       bio: bio || '',
-      profilePic: req.file ? (req.file.path || req.file.secure_url) : ''  // ✅ Use Cloudinary URL
+      profilePic: req.file ? (req.file.path || req.file.secure_url) : ''
     });
 
     await user.save();
@@ -96,24 +94,13 @@ exports.updateUser = async (req, res) => {
     if (lastName) updateFields.lastName = lastName;
 
     if (contactNumber) {
-      // ✅ Validate contact number (Philippines format: 11 digits, starts with 09)
       if (!/^09\d{9}$/.test(contactNumber)) {
-        return res.status(400).json({ 
-          success: false, 
-          message: 'Contact number must be 11 digits and start with 09' 
-        });
+        return res.status(400).json({ success: false, message: 'Contact number must be 11 digits and start with 09' });
       }
 
-      // Check if contact number already exists (excluding current user)
-      const existingContact = await User.findOne({ 
-        contactNumber, 
-        _id: { $ne: req.params.id } 
-      });
+      const existingContact = await User.findOne({ contactNumber, _id: { $ne: req.params.id } });
       if (existingContact) {
-        return res.status(400).json({ 
-          success: false, 
-          message: 'Contact number already registered by another user' 
-        });
+        return res.status(400).json({ success: false, message: 'Contact number already registered by another user' });
       }
 
       updateFields.contactNumber = contactNumber;
@@ -121,7 +108,7 @@ exports.updateUser = async (req, res) => {
 
     if (bio !== undefined) updateFields.bio = bio;
     if (req.file && (req.file.path || req.file.secure_url)) {
-      updateFields.profilePic = req.file.path || req.file.secure_url;  // ✅ Use Cloudinary URL
+      updateFields.profilePic = req.file.path || req.file.secure_url;
     }
 
     const user = await User.findByIdAndUpdate(req.params.id, updateFields, { new: true }).select('-password');
@@ -162,7 +149,8 @@ exports.getAllUsers = async (req, res) => {
       contactNumber: u.contactNumber,
       bio: u.bio,
       profilePic: u.profilePic || '',
-      points: u.points || 0
+      points: u.points || 0,
+      role: u.role || 'user'
     }));
     res.json({ success: true, data });
   } catch (err) {
@@ -203,9 +191,9 @@ exports.updateProfilePic = async (req, res) => {
     }
 
     const profilePicUrl = req.file.path || req.file.secure_url;
-    
+
     const user = await User.findByIdAndUpdate(
-      req.user.id, // Use the user ID from the JWT token
+      req.user.id,
       { profilePic: profilePicUrl },
       { new: true }
     ).select('-password');
@@ -229,6 +217,43 @@ exports.updateProfilePic = async (req, res) => {
     });
   } catch (err) {
     console.error('❌ Update profile pic error:', err.message);
+    res.status(500).json({ success: false, message: 'Server error' });
+  }
+};
+
+// Create new admin (superadmin only)
+exports.createAdmin = async (req, res) => {
+  try {
+    const { email, password } = req.body;
+
+    if (!email || !password) {
+      return res.status(400).json({ success: false, message: 'Email and password are required' });
+    }
+
+    const existingUser = await User.findOne({ email: email.toLowerCase().trim() });
+    if (existingUser) {
+      return res.status(400).json({ success: false, message: 'User with this email already exists' });
+    }
+
+    const admin = new User({
+      email: email.toLowerCase().trim(),
+      password,
+      role: 'admin',
+    });
+
+    await admin.save();
+
+    res.status(201).json({
+      success: true,
+      message: 'Admin created successfully',
+      data: {
+        id: admin._id,
+        email: admin.email,
+        role: admin.role
+      }
+    });
+  } catch (err) {
+    console.error('❌ Create admin error:', err.message);
     res.status(500).json({ success: false, message: 'Server error' });
   }
 };
