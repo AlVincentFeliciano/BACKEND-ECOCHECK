@@ -6,12 +6,20 @@ const userSchema = new mongoose.Schema({
   middleInitial: { type: String, default: '' },
   lastName: { type: String, required: true },
   email: { type: String, required: true, unique: true },
-  contactNumber: { type: String, required: true },
+  contactNumber: { type: String, required: true, unique: true },
   password: { type: String, required: true },
-  role: { type: String, default: 'user' },
+  role: { 
+    type: String, 
+    enum: ['user', 'admin', 'superadmin'], 
+    default: 'user' 
+  },
   bio: { type: String, default: '' },
   profilePic: { type: String, default: '' },
-  points: { type: Number, default: 0 }
+  points: { type: Number, default: 0 },
+
+  // Optional: for forgot password
+  resetCode: { type: String, default: null },
+  resetCodeExpires: { type: Date, default: null }
 }, { timestamps: true });
 
 // Hash password before saving

@@ -9,18 +9,13 @@ exports.registerUser = async (req, res) => {
   email = email.toLowerCase().trim();
 
   try {
-    // Validate required fields
     if (!firstName || !lastName || !email || !contactNumber || !password) {
-      return res.status(400).json({ 
-        message: 'All required fields must be provided (firstName, lastName, email, contactNumber, password)' 
-      });
+      return res.status(400).json({ message: 'All required fields must be provided' });
     }
 
-    // Validate contact number format (should start with +63 and have 13 characters total)
-    if (!contactNumber.startsWith('+63') || contactNumber.length !== 13) {
-      return res.status(400).json({ 
-        message: 'Contact number must be in format +63XXXXXXXXXX (13 characters)' 
-      });
+    // ✅ Contact number validation (Philippines: 11 digits only, no +63 here)
+    if (contactNumber.length !== 11 || !/^\d{11}$/.test(contactNumber)) {
+      return res.status(400).json({ message: 'Contact number must be exactly 11 digits' });
     }
 
     let user = await User.findOne({ email });
@@ -38,8 +33,8 @@ exports.registerUser = async (req, res) => {
       lastName,
       email,
       contactNumber,
-      password, // raw password, schema hook will hash
-      role: email.includes('@admin.com') ? 'admin' : 'user',
+      password, // schema will hash
+      role: 'user', // ✅ Always register as regular user here
     });
 
     await user.save();
@@ -47,7 +42,10 @@ exports.registerUser = async (req, res) => {
     const payload = { user: { id: user.id, role: user.role } };
     const token = jwt.sign(payload, JWT_SECRET, { expiresIn: '1h' });
 
-    res.status(201).json({ token });
+    res.status(201).json({
+      token,
+      role: user.role
+    });
   } catch (err) {
     console.error('❌ Registration error:', err.message);
     res.status(500).json({ message: err.message });
@@ -62,68 +60,63 @@ exports.loginUser = async (req, res) => {
   try {
     const user = await User.findOne({ email });
     if (!user) {
-      console.log(`⚠️ Login failed, no user found: ${email}`);
       return res.status(400).json({ message: 'Invalid Credentials' });
     }
 
     const isMatch = await user.matchPassword(password);
     if (!isMatch) {
-      console.log(`⚠️ Login failed, password mismatch for: ${email}`);
       return res.status(400).json({ message: 'Invalid Credentials' });
     }
 
     const payload = { user: { id: user.id, role: user.role } };
     const token = jwt.sign(payload, JWT_SECRET, { expiresIn: '1h' });
 
-    console.log(`✅ Login successful: ${email}`);
-    res.json({ token });
+    res.json({
+      token,
+      role: user.role // ✅ frontend can check role
+    });
   } catch (err) {
     console.error('❌ Login error:', err.message);
     res.status(500).json({ message: err.message });
   }
 };
 
-// Register a new admin (Head admin only)
+// Register a new admin (Superadmin only)
 exports.registerAdmin = async (req, res) => {
   let { email, password } = req.body;
   email = email.toLowerCase().trim();
 
   try {
-    // Check if requester is head admin
     const requestingUser = await User.findById(req.user.id);
-    if (!requestingUser || requestingUser.role !== 'admin') {
-      return res.status(403).json({ error: 'Only admins can create new admin accounts' });
+    if (!requestingUser || requestingUser.role !== 'superadmin') {
+      return res.status(403).json({ error: 'Only superadmin can create new admins' });
     }
 
-    // Validate required fields
     if (!email || !password) {
       return res.status(400).json({ error: 'Email and password are required' });
     }
 
-    // Validate password length
     if (password.length < 6) {
       return res.status(400).json({ error: 'Password must be at least 6 characters long' });
     }
 
-    // Check if user already exists
     let user = await User.findOne({ email });
     if (user) {
-      return res.status(400).json({ error: 'Admin with this email already exists' });
+      return res.status(400).json({ error: 'User with this email already exists' });
     }
 
-    // Create new admin user
     user = new User({
       firstName: 'Admin',
       lastName: 'User',
       email,
-      contactNumber: '+63000000000', // Default contact for admin
+      contactNumber: '00000000000', // ✅ placeholder 11-digit
       password,
       role: 'admin'
     });
 
     await user.save();
 
-    res.status(201).json({ 
+    res.status(201).json({
       message: 'Admin created successfully',
       admin: {
         _id: user._id,
@@ -137,12 +130,11 @@ exports.registerAdmin = async (req, res) => {
   }
 };
 
-// Get all admins (Admin only)
+// Get all admins (Superadmin only)
 exports.getAdmins = async (req, res) => {
   try {
-    // Check if requester is admin
     const requestingUser = await User.findById(req.user.id);
-    if (!requestingUser || requestingUser.role !== 'admin') {
+    if (!requestingUser || requestingUser.role !== 'superadmin') {
       return res.status(403).json({ error: 'Access denied' });
     }
 
@@ -157,20 +149,14 @@ exports.getAdmins = async (req, res) => {
   }
 };
 
-// Delete admin (Head admin only)
+// Delete admin (Superadmin only)
 exports.deleteAdmin = async (req, res) => {
   try {
     const { adminId } = req.params;
 
-    // Check if requester is admin
     const requestingUser = await User.findById(req.user.id);
-    if (!requestingUser || requestingUser.role !== 'admin') {
-      return res.status(403).json({ error: 'Only admins can delete admin accounts' });
-    }
-
-    // Prevent admin from deleting themselves
-    if (requestingUser._id.toString() === adminId) {
-      return res.status(400).json({ error: 'Cannot delete your own admin account' });
+    if (!requestingUser || requestingUser.role !== 'superadmin') {
+      return res.status(403).json({ error: 'Only superadmin can delete admin accounts' });
     }
 
     const adminToDelete = await User.findById(adminId);

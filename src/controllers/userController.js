@@ -9,6 +9,11 @@ exports.registerUser = async (req, res) => {
       return res.status(400).json({ success: false, message: 'All required fields are missing' });
     }
 
+    // ✅ Validate contact number (Philippines format: 11 digits, starts with 09)
+    if (!/^09\d{9}$/.test(contactNumber)) {
+      return res.status(400).json({ success: false, message: 'Contact number must be 11 digits and start with 09' });
+    }
+
     const existingUser = await User.findOne({ email: email.toLowerCase().trim() });
     if (existingUser) {
       return res.status(400).json({ success: false, message: 'User already exists' });
@@ -89,15 +94,16 @@ exports.updateUser = async (req, res) => {
     if (firstName) updateFields.firstName = firstName;
     if (middleInitial !== undefined) updateFields.middleInitial = middleInitial;
     if (lastName) updateFields.lastName = lastName;
+
     if (contactNumber) {
-      // Validate contact number format if provided
-      if (!contactNumber.startsWith('+63') || contactNumber.length !== 13) {
+      // ✅ Validate contact number (Philippines format: 11 digits, starts with 09)
+      if (!/^09\d{9}$/.test(contactNumber)) {
         return res.status(400).json({ 
           success: false, 
-          message: 'Contact number must be in format +63XXXXXXXXXX (13 characters)' 
+          message: 'Contact number must be 11 digits and start with 09' 
         });
       }
-      
+
       // Check if contact number already exists (excluding current user)
       const existingContact = await User.findOne({ 
         contactNumber, 
@@ -109,9 +115,10 @@ exports.updateUser = async (req, res) => {
           message: 'Contact number already registered by another user' 
         });
       }
-      
+
       updateFields.contactNumber = contactNumber;
     }
+
     if (bio !== undefined) updateFields.bio = bio;
     if (req.file && (req.file.path || req.file.secure_url)) {
       updateFields.profilePic = req.file.path || req.file.secure_url;  // ✅ Use Cloudinary URL
