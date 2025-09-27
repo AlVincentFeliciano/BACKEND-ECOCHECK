@@ -74,7 +74,8 @@ exports.getUser = async (req, res) => {
         contactNumber: user.contactNumber,
         bio: user.bio,
         profilePic: user.profilePic || '',
-        points: user.points || 0
+        points: user.points || 0,
+        isActive: user.isActive !== false // Default to true if not set
       }
     });
   } catch (err) {
@@ -86,12 +87,13 @@ exports.getUser = async (req, res) => {
 // Update user
 exports.updateUser = async (req, res) => {
   try {
-    const { firstName, middleInitial, lastName, contactNumber, bio } = req.body;
+    const { firstName, middleInitial, lastName, contactNumber, bio, isActive } = req.body;
     const updateFields = {};
 
     if (firstName) updateFields.firstName = firstName;
     if (middleInitial !== undefined) updateFields.middleInitial = middleInitial;
     if (lastName) updateFields.lastName = lastName;
+    if (isActive !== undefined) updateFields.isActive = isActive;
 
     if (contactNumber) {
       if (!/^09\d{9}$/.test(contactNumber)) {
@@ -127,7 +129,8 @@ exports.updateUser = async (req, res) => {
         contactNumber: user.contactNumber,
         bio: user.bio,
         profilePic: user.profilePic,
-        points: user.points
+        points: user.points,
+        isActive: user.isActive
       }
     });
   } catch (err) {
@@ -150,7 +153,8 @@ exports.getAllUsers = async (req, res) => {
       bio: u.bio,
       profilePic: u.profilePic || '',
       points: u.points || 0,
-      role: u.role || 'user'
+      role: u.role || 'user',
+      isActive: u.isActive !== false // Default to true if not set
     }));
     res.json({ success: true, data });
   } catch (err) {
@@ -212,7 +216,8 @@ exports.updateProfilePic = async (req, res) => {
         contactNumber: user.contactNumber,
         bio: user.bio,
         profilePic: user.profilePic,
-        points: user.points
+        points: user.points,
+        isActive: user.isActive !== false // Default to true if not set
       }
     });
   } catch (err) {

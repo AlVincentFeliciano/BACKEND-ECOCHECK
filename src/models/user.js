@@ -16,6 +16,7 @@ const userSchema = new mongoose.Schema({
   bio: { type: String, default: '' },
   profilePic: { type: String, default: '' },
   points: { type: Number, default: 0 },
+  isActive: { type: Boolean, default: true },
 
   // Optional: for forgot password
   resetCode: { type: String, default: null },
