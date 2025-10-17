@@ -1,5 +1,6 @@
 const jwt = require('jsonwebtoken');
 const User = require('../models/user');
+const LoginLog = require('../models/loginLog');
 
 const JWT_SECRET = process.env.JWT_SECRET || 'your_super_secret_key';
 
@@ -86,6 +87,31 @@ exports.loginUser = async (req, res) => {
 
     const payload = { user: { id: user.id, role: user.role } };
     const token = jwt.sign(payload, JWT_SECRET, { expiresIn: '1h' });
+
+    // ✅ Log admin logins only (admin and superadmin)
+    if (user.role === 'admin' || user.role === 'superadmin') {
+      try {
+        const ipAddress = req.headers['x-forwarded-for'] || req.connection.remoteAddress || 'Unknown';
+        const userAgent = req.headers['user-agent'] || 'Unknown';
+        
+        const loginLogEntry = await LoginLog.create({
+          user: user._id,
+          email: user.email,
+          role: user.role,
+          ipAddress: ipAddress,
+          userAgent: userAgent
+        });
+        
+        console.log(`✅ Login logged for ${user.role}: ${user.email}`);
+        console.log(`📝 Login log entry created:`, loginLogEntry);
+      } catch (logError) {
+        // Don't fail login if logging fails
+        console.error('❌ Failed to create login log:', logError.message);
+        console.error('❌ Full error:', logError);
+      }
+    } else {
+      console.log(`ℹ️ Regular user login (not logged): ${user.email} (role: ${user.role})`);
+    }
 
     res.json({
       token,
@@ -305,5 +331,64 @@ exports.resetPassword = async (req, res) => {
   } catch (err) {
     console.error('❌ Reset password error:', err.message);
     res.status(500).json({ message: 'Server error. Please try again later.' });
+  }
+};
+
+// Get login logs (Superadmin only)
+exports.getLoginLogs = async (req, res) => {
+  try {
+    console.log('📋 Fetching login logs request from user:', req.user.id);
+    
+    const requestingUser = await User.findById(req.user.id);
+    console.log('📋 Requesting user:', requestingUser?.email, 'Role:', requestingUser?.role);
+    
+    if (!requestingUser || requestingUser.role !== 'superadmin') {
+      console.log('❌ Access denied - user is not superadmin');
+      return res.status(403).json({ error: 'Access denied. Only superadmin can view login logs.' });
+    }
+
+    // Get query parameters for filtering
+    const { limit = 100, page = 1, role } = req.query;
+    const skip = (parseInt(page) - 1) * parseInt(limit);
+
+    // Build filter - ONLY show admin and superadmin logins
+    const filter = {
+      role: { $in: ['admin', 'superadmin'] }
+    };
+    
+    // If specific role is requested, override the filter
+    if (role && (role === 'admin' || role === 'superadmin')) {
+      filter.role = role;
+    }
+
+    console.log('📋 Filter:', filter);
+
+    // Get total count for pagination
+    const total = await LoginLog.countDocuments(filter);
+    console.log('📋 Total login logs found:', total);
+
+    // Fetch login logs with user population
+    const logs = await LoginLog.find(filter)
+      .populate('user', 'firstName lastName email role')
+      .sort({ loginTime: -1 })
+      .limit(parseInt(limit))
+      .skip(skip);
+
+    console.log('📋 Returning', logs.length, 'login logs');
+
+    res.json({
+      success: true,
+      data: logs,
+      pagination: {
+        total,
+        page: parseInt(page),
+        limit: parseInt(limit),
+        totalPages: Math.ceil(total / parseInt(limit))
+      }
+    });
+  } catch (err) {
+    console.error('❌ Get login logs error:', err.message);
+    console.error('❌ Full error:', err);
+    res.status(500).json({ error: 'Server error while fetching login logs' });
   }
 };

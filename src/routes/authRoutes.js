@@ -3,7 +3,7 @@ const express = require('express');
 const router = express.Router();
 
 // Import controller functions
-const { registerUser, loginUser, registerAdmin, getAdmins, deleteAdmin, forgotPassword, resetPassword } = require('../controllers/authController');
+const { registerUser, loginUser, registerAdmin, getAdmins, deleteAdmin, forgotPassword, resetPassword, getLoginLogs } = require('../controllers/authController');
 const { authMiddleware } = require('../middleware/authMiddleware'); // ✅ destructure here
 
 // Routes
@@ -18,5 +18,8 @@ router.post('/reset-password', resetPassword);
 router.post('/register-admin', authMiddleware, registerAdmin);
 router.get('/admins', authMiddleware, getAdmins);
 router.delete('/admin/:adminId', authMiddleware, deleteAdmin);
+
+// Login logs route (superadmin only)
+router.get('/login-logs', authMiddleware, getLoginLogs);
 
 module.exports = router;
