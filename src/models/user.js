@@ -17,6 +17,11 @@ const userSchema = new mongoose.Schema({
   profilePic: { type: String, default: '' },
   points: { type: Number, default: 0 },
   isActive: { type: Boolean, default: true },
+  isVerified: { type: Boolean, default: false },
+
+  // Email verification
+  verificationCode: { type: String, default: null },
+  verificationCodeExpires: { type: Date, default: null },
 
   // Optional: for forgot password
   resetCode: { type: String, default: null },

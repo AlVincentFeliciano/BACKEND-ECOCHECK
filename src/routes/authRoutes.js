@@ -3,12 +3,16 @@ const express = require('express');
 const router = express.Router();
 
 // Import controller functions
-const { registerUser, loginUser, registerAdmin, getAdmins, deleteAdmin, forgotPassword, resetPassword, getLoginLogs } = require('../controllers/authController');
+const { registerUser, loginUser, registerAdmin, getAdmins, deleteAdmin, forgotPassword, resetPassword, getLoginLogs, verifyEmail, resendVerificationCode } = require('../controllers/authController');
 const { authMiddleware } = require('../middleware/authMiddleware'); // ✅ destructure here
 
 // Routes
 router.post('/register', registerUser);
 router.post('/login', loginUser);
+
+// Email verification routes
+router.post('/verify-email', verifyEmail);
+router.post('/resend-verification', resendVerificationCode);
 
 // Password reset routes
 router.post('/forgot-password', forgotPassword);

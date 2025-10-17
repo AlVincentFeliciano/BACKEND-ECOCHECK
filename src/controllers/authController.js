@@ -39,6 +39,10 @@ exports.registerUser = async (req, res) => {
       return res.status(400).json({ message: 'Contact number already registered' });
     }
 
+    // Generate 6-digit verification code
+    const verificationCode = Math.floor(100000 + Math.random() * 900000).toString();
+    const verificationCodeExpires = new Date(Date.now() + 15 * 60 * 1000); // 15 minutes
+
     user = new User({
       firstName,
       middleInitial,
@@ -47,16 +51,35 @@ exports.registerUser = async (req, res) => {
       contactNumber,
       password, // schema will hash
       role: 'user', // ✅ Always register as regular user here
+      isVerified: false,
+      verificationCode,
+      verificationCodeExpires
     });
 
     await user.save();
 
-    const payload = { user: { id: user.id, role: user.role } };
-    const token = jwt.sign(payload, JWT_SECRET, { expiresIn: '1h' });
+    // Send verification email
+    try {
+      if (emailService) {
+        emailService.sendVerificationEmail(user.email, verificationCode, `${firstName} ${lastName}`)
+          .then(() => console.log('✅ Verification email sent to:', user.email))
+          .catch(err => console.error('❌ Email failed:', err.message));
+      } else {
+        console.log('🔧 EMAIL SERVICE FALLBACK - Email service not available');
+        console.log(`📧 Email: ${user.email}`);
+        console.log(`🔢 Verification Code: ${verificationCode}`);
+        console.log('⚠️ User needs to check server logs for verification code');
+      }
+    } catch (emailError) {
+      console.error('❌ Email service error:', emailError.message);
+    }
 
     res.status(201).json({
-      token,
-      role: user.role
+      success: true,
+      message: 'Registration successful! Please check your email for the verification code.',
+      email: user.email,
+      userId: user._id,
+      requiresVerification: true
     });
   } catch (err) {
     console.error('❌ Registration error:', err.message);
@@ -75,14 +98,24 @@ exports.loginUser = async (req, res) => {
       return res.status(400).json({ message: 'Invalid Credentials' });
     }
 
-    // Check if user account is active
-    if (user.isActive === false) {
-      return res.status(403).json({ message: 'Account has been deactivated. Please contact support.' });
-    }
-
     const isMatch = await user.matchPassword(password);
     if (!isMatch) {
       return res.status(400).json({ message: 'Invalid Credentials' });
+    }
+
+    // Check if user is verified (only for regular users, not admins)
+    if (user.role === 'user' && !user.isVerified) {
+      return res.status(403).json({ 
+        message: 'Please verify your email before logging in. Check your email for the verification code.',
+        requiresVerification: true,
+        email: user.email,
+        userId: user._id
+      });
+    }
+
+    // Check if user account is active
+    if (user.isActive === false) {
+      return res.status(403).json({ message: 'Account has been deactivated. Please contact support.' });
     }
 
     const payload = { user: { id: user.id, role: user.role } };
@@ -390,5 +423,110 @@ exports.getLoginLogs = async (req, res) => {
     console.error('❌ Get login logs error:', err.message);
     console.error('❌ Full error:', err);
     res.status(500).json({ error: 'Server error while fetching login logs' });
+  }
+};
+
+// Verify email with code
+exports.verifyEmail = async (req, res) => {
+  try {
+    const { email, verificationCode } = req.body;
+
+    if (!email || !verificationCode) {
+      return res.status(400).json({ message: 'Email and verification code are required' });
+    }
+
+    const user = await User.findOne({ email: email.toLowerCase().trim() });
+    if (!user) {
+      return res.status(404).json({ message: 'User not found' });
+    }
+
+    if (user.isVerified) {
+      return res.status(400).json({ message: 'Email is already verified' });
+    }
+
+    if (!user.verificationCode || !user.verificationCodeExpires) {
+      return res.status(400).json({ message: 'No verification code found. Please request a new one.' });
+    }
+
+    if (user.verificationCode !== verificationCode.trim()) {
+      return res.status(400).json({ message: 'Invalid verification code' });
+    }
+
+    if (new Date() > user.verificationCodeExpires) {
+      return res.status(400).json({ message: 'Verification code has expired. Please request a new one.' });
+    }
+
+    // Verify the user
+    user.isVerified = true;
+    user.verificationCode = null;
+    user.verificationCodeExpires = null;
+    await user.save();
+
+    // Generate token for auto-login after verification
+    const payload = { user: { id: user.id, role: user.role } };
+    const token = jwt.sign(payload, JWT_SECRET, { expiresIn: '1h' });
+
+    console.log(`✅ Email verified for user: ${user.email}`);
+
+    res.json({
+      success: true,
+      message: 'Email verified successfully! You can now log in.',
+      token,
+      role: user.role
+    });
+  } catch (err) {
+    console.error('❌ Email verification error:', err.message);
+    res.status(500).json({ message: 'Server error. Please try again later.' });
+  }
+};
+
+// Resend verification code
+exports.resendVerificationCode = async (req, res) => {
+  try {
+    const { email } = req.body;
+
+    if (!email) {
+      return res.status(400).json({ message: 'Email is required' });
+    }
+
+    const user = await User.findOne({ email: email.toLowerCase().trim() });
+    if (!user) {
+      return res.status(404).json({ message: 'User not found' });
+    }
+
+    if (user.isVerified) {
+      return res.status(400).json({ message: 'Email is already verified' });
+    }
+
+    // Generate new verification code
+    const verificationCode = Math.floor(100000 + Math.random() * 900000).toString();
+    const verificationCodeExpires = new Date(Date.now() + 15 * 60 * 1000); // 15 minutes
+
+    user.verificationCode = verificationCode;
+    user.verificationCodeExpires = verificationCodeExpires;
+    await user.save();
+
+    // Send verification email
+    try {
+      if (emailService) {
+        emailService.sendVerificationEmail(user.email, verificationCode, `${user.firstName} ${user.lastName}`)
+          .then(() => console.log('✅ Verification code resent to:', user.email))
+          .catch(err => console.error('❌ Email failed:', err.message));
+      } else {
+        console.log('🔧 EMAIL SERVICE FALLBACK');
+        console.log(`📧 Email: ${user.email}`);
+        console.log(`🔢 Verification Code: ${verificationCode}`);
+      }
+    } catch (emailError) {
+      console.error('❌ Email service error:', emailError.message);
+    }
+
+    res.json({
+      success: true,
+      message: 'Verification code has been resent to your email'
+    });
+  } catch (err) {
+    console.error('❌ Resend verification error:', err.message);
+    res.status(500).json({ message: 'Server error. Please try again later.' });
   }
 };

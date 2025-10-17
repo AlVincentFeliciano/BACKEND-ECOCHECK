@@ -172,6 +172,132 @@ class EmailService {
       note: 'Development mode - no email actually sent'
     };
   }
+
+  async sendVerificationEmail(userEmail, verificationCode, userName) {
+    try {
+      console.log(`📧 Attempting to send verification email to ${userEmail}`);
+      
+      // Try Resend first if available
+      if (this.useResend) {
+        const result = await this.sendVerificationWithResend(userEmail, verificationCode, userName);
+        if (result.success) {
+          return result;
+        }
+        console.log('🔄 Resend failed, trying Gmail SMTP...');
+      }
+      
+      // Gmail SMTP method
+      if (!this.transporter) {
+        throw new Error('Email service not initialized - check credentials');
+      }
+      
+      const mailOptions = {
+        from: process.env.EMAIL_USER || 'ecocheck@gmail.com',
+        to: userEmail,
+        subject: 'EcoCheck - Verify Your Email Address',
+        html: `
+          <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+            <div style="background-color: #4CAF50; color: white; padding: 20px; text-align: center;">
+              <h1>🌱 Welcome to EcoCheck!</h1>
+            </div>
+            <div style="padding: 20px; background-color: #f9f9f9;">
+              <h2>Hi ${userName},</h2>
+              <p>Thank you for registering with EcoCheck! To complete your registration, please verify your email address.</p>
+              <div style="background-color: #ffffff; padding: 20px; margin: 20px 0; border-radius: 5px; text-align: center; border: 2px dashed #4CAF50;">
+                <h1 style="color: #4CAF50; font-size: 32px; margin: 0;">${verificationCode}</h1>
+                <p style="color: #666; margin: 5px 0;">Enter this code in the app</p>
+              </div>
+              <p><strong>This code expires in 15 minutes.</strong></p>
+              <p>If you didn't create an EcoCheck account, please ignore this email.</p>
+              <hr style="border: none; border-top: 1px solid #ddd; margin: 20px 0;">
+              <p style="color: #666; font-size: 12px;">
+                This is an automated email from EcoCheck. Please do not reply to this email.
+              </p>
+            </div>
+          </div>
+        `
+      };
+
+      const emailPromise = this.transporter.sendMail(mailOptions);
+      const timeoutPromise = new Promise((_, reject) => 
+        setTimeout(() => reject(new Error('Gmail SMTP timeout after 10 seconds')), 10000)
+      );
+
+      const result = await Promise.race([emailPromise, timeoutPromise]);
+      console.log('✅ Verification email sent via Gmail:', result.messageId);
+      
+      return {
+        success: true,
+        messageId: result.messageId
+      };
+      
+    } catch (error) {
+      console.error('❌ All email methods failed:', error.message);
+      return this.developmentFallbackVerification(userEmail, verificationCode);
+    }
+  }
+
+  async sendVerificationWithResend(userEmail, verificationCode, userName) {
+    const fetch = require('node-fetch');
+    
+    try {
+      const response = await fetch('https://api.resend.com/emails', {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${process.env.RESEND_API_KEY}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          from: 'EcoCheck <noreply@ecocheck.app>',
+          to: [userEmail],
+          subject: 'EcoCheck - Verify Your Email Address',
+          html: `
+            <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+              <div style="background-color: #4CAF50; color: white; padding: 20px; text-align: center;">
+                <h1>🌱 Welcome to EcoCheck!</h1>
+              </div>
+              <div style="padding: 20px; background-color: #f9f9f9;">
+                <h2>Hi ${userName},</h2>
+                <p>Thank you for registering with EcoCheck! To complete your registration, please verify your email address.</p>
+                <div style="background-color: #ffffff; padding: 20px; margin: 20px 0; border-radius: 5px; text-align: center; border: 2px dashed #4CAF50;">
+                  <h1 style="color: #4CAF50; font-size: 32px; margin: 0;">${verificationCode}</h1>
+                  <p style="color: #666; margin: 5px 0;">Enter this code in the app</p>
+                </div>
+                <p><strong>This code expires in 15 minutes.</strong></p>
+                <p>If you didn't create an EcoCheck account, please ignore this email.</p>
+              </div>
+            </div>
+          `
+        }),
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        console.log('✅ Verification email sent via Resend:', data.id);
+        return { success: true, messageId: data.id };
+      } else {
+        throw new Error(`Resend API error: ${response.status}`);
+      }
+    } catch (error) {
+      console.error('❌ Resend email failed:', error.message);
+      return { success: false, error: error.message };
+    }
+  }
+
+  developmentFallbackVerification(userEmail, verificationCode) {
+    console.log('🔧 EMAIL DEVELOPMENT MODE - Verification Email');
+    console.log(`📧 To: ${userEmail}`);
+    console.log(`🔢 Verification Code: ${verificationCode}`);
+    console.log('ℹ️ In production, this would send via email');
+    
+    return {
+      success: true,
+      messageId: 'DEV_VERIFY_' + Date.now(),
+      provider: 'development',
+      code: verificationCode,
+      note: 'Development mode - no email actually sent'
+    };
+  }
 }
 
 module.exports = EmailService;
