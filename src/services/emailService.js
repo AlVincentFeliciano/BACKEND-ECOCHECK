@@ -9,13 +9,13 @@ class EmailService {
         // Using Resend API (recommended for production)
         this.useResend = true;
         console.log('✅ Email Service initialized with Resend API');
-      } else {
+      } else if (process.env.EMAIL_USER && process.env.EMAIL_PASS) {
         // Fallback to Gmail SMTP
         this.transporter = nodemailer.createTransport({
           service: 'gmail',
           auth: {
-            user: process.env.EMAIL_USER || 'your-email@gmail.com',
-            pass: process.env.EMAIL_PASS || 'your-app-password'
+            user: process.env.EMAIL_USER,
+            pass: process.env.EMAIL_PASS
           },
           tls: {
             rejectUnauthorized: false
@@ -23,12 +23,22 @@ class EmailService {
         });
         console.log('✅ Email Service initialized with Gmail SMTP');
         this.testConnection();
+      } else {
+        // No email credentials configured - use development mode
+        console.log('⚠️ No email credentials configured - running in DEVELOPMENT MODE');
+        console.log('💡 To enable email sending:');
+        console.log('   Option 1 (Recommended): Add RESEND_API_KEY to .env');
+        console.log('   Option 2: Add EMAIL_USER and EMAIL_PASS to .env for Gmail');
+        this.transporter = null;
+        this.useResend = false;
+        this.developmentMode = true;
       }
       
     } catch (error) {
       console.error('❌ Failed to initialize Email Service:', error.message);
       this.transporter = null;
       this.useResend = false;
+      this.developmentMode = true;
     }
   }
   
@@ -93,7 +103,13 @@ class EmailService {
 
   async sendPasswordResetEmail(userEmail, resetCode) {
     try {
-      console.log(`📧 Attempting to send password reset email to ${userEmail}`);
+      console.log(`📧 Sending password reset email to ${userEmail}`);
+      
+      // If in development mode, skip email attempts and go straight to fallback
+      if (this.developmentMode) {
+        console.log('🔧 Development mode active - displaying code instead of sending email');
+        return this.developmentFallback(userEmail, resetCode);
+      }
       
       // Try Resend first if available (more reliable)
       if (this.useResend) {
@@ -152,30 +168,41 @@ class EmailService {
       };
       
     } catch (error) {
-      console.error('❌ All email methods failed:', error.message);
+      console.error('❌ Email sending failed:', error.message);
       return this.developmentFallback(userEmail, resetCode);
     }
   }
 
   // Fallback for development or when email fails
   developmentFallback(userEmail, resetCode) {
-    console.log('🔧 EMAIL DEVELOPMENT MODE - No actual email sent');
-    console.log(`📧 To: ${userEmail}`);
-    console.log(`🔢 Reset Code: ${resetCode}`);
-    console.log('ℹ️ In production, this would send via email');
+    console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
+    console.log('🔧 DEVELOPMENT MODE - EMAIL NOT SENT');
+    console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
+    console.log('📧 To:', userEmail);
+    console.log('🔢 Password Reset Code:', resetCode);
+    console.log('⏰ Expires in: 10 minutes');
+    console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
+    console.log('💡 Use this code to reset the password');
+    console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n');
     
     return {
       success: true,
       messageId: 'DEV_' + Date.now(),
       provider: 'development',
       code: resetCode,
-      note: 'Development mode - no email actually sent'
+      note: 'Development mode - code displayed in console'
     };
   }
 
   async sendVerificationEmail(userEmail, verificationCode, userName) {
     try {
-      console.log(`📧 Attempting to send verification email to ${userEmail}`);
+      console.log(`📧 Sending verification email to ${userEmail}`);
+      
+      // If in development mode, skip email attempts and go straight to fallback
+      if (this.developmentMode) {
+        console.log('🔧 Development mode active - displaying code instead of sending email');
+        return this.developmentFallbackVerification(userEmail, verificationCode);
+      }
       
       // Try Resend first if available
       if (this.useResend) {
@@ -232,7 +259,7 @@ class EmailService {
       };
       
     } catch (error) {
-      console.error('❌ All email methods failed:', error.message);
+      console.error('❌ Email sending failed:', error.message);
       return this.developmentFallbackVerification(userEmail, verificationCode);
     }
   }
@@ -285,17 +312,22 @@ class EmailService {
   }
 
   developmentFallbackVerification(userEmail, verificationCode) {
-    console.log('🔧 EMAIL DEVELOPMENT MODE - Verification Email');
-    console.log(`📧 To: ${userEmail}`);
-    console.log(`🔢 Verification Code: ${verificationCode}`);
-    console.log('ℹ️ In production, this would send via email');
+    console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
+    console.log('🔧 DEVELOPMENT MODE - EMAIL NOT SENT');
+    console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
+    console.log('📧 To:', userEmail);
+    console.log('🔢 Verification Code:', verificationCode);
+    console.log('⏰ Expires in: 15 minutes');
+    console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
+    console.log('💡 Use this code to verify the account');
+    console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n');
     
     return {
       success: true,
       messageId: 'DEV_VERIFY_' + Date.now(),
       provider: 'development',
       code: verificationCode,
-      note: 'Development mode - no email actually sent'
+      note: 'Development mode - code displayed in console'
     };
   }
 }
