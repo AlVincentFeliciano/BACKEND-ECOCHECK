@@ -8,13 +8,20 @@ const { getUser, updateUser, getAllUsers, changePassword, updateProfilePic } = r
 const upload = multer({ storage });
 
 // Get current logged-in user
+// Get current logged-in user
 router.get('/me', authMiddleware, async (req, res) => {
   try {
+    // 🔹 Debug: log req.user
+    console.log('📌 /users/me req.user:', req.user);
+
     const userId = req.user?.id;
-    if (!userId) return res.status(401).json({ message: 'Unauthorized' });
+    if (!userId) {
+      console.warn('⚠️ req.user is undefined, check your token and authMiddleware!');
+      return res.status(401).json({ success: false, message: 'Unauthorized: no user info found' });
+    }
 
     const user = await require('../models/user').findById(userId).select('-password');
-    if (!user) return res.status(404).json({ message: 'User not found' });
+    if (!user) return res.status(404).json({ success: false, message: 'User not found' });
 
     res.json({
       success: true,
@@ -33,10 +40,11 @@ router.get('/me', authMiddleware, async (req, res) => {
       },
     });
   } catch (err) {
-    console.error('❌ Fetch user error:', err.message);
-    res.status(500).json({ message: 'Server error' });
+    console.error('❌ Fetch user error:', err);
+    res.status(500).json({ success: false, message: 'Server error', error: err.message });
   }
 });
+
 
 router.get('/:id', authMiddleware, getUser);
 router.put('/:id', authMiddleware, upload.single('profilePic'), updateUser);
