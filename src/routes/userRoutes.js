@@ -11,6 +11,7 @@ const {
   updateProfilePic
 } = require('../controllers/userController');
 
+// Multer instances
 const uploadReport = multer({ storage: reportStorage });
 const uploadProfile = multer({ storage: profileStorage });
 
@@ -47,18 +48,18 @@ router.get('/me', authMiddleware, async (req, res) => {
   }
 });
 
-// Change password for logged-in user
+// Change password for current user
 router.put('/change-password/me', authMiddleware, changePassword);
 
-// Update profile picture for logged-in user
+// Update profile picture for current user
 router.put('/profile-pic', authMiddleware, uploadProfile.single('profilePic'), updateProfilePic);
 
-// ✅ Dynamic routes after static routes
+// ✅ Dynamic routes last
 
-// Get user by ID
+// Get any user by ID
 router.get('/:id', authMiddleware, getUser);
 
-// Update user by ID
+// Update any user by ID
 router.put('/:id', authMiddleware, uploadProfile.single('profilePic'), updateUser);
 
 // Get all users
