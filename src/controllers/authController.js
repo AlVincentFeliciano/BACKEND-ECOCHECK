@@ -2,6 +2,7 @@
 const jwt = require('jsonwebtoken');
 const User = require('../models/user');
 const LoginLog = require('../models/loginLog');
+const EmailService = require('../services/emailService');
 
 const JWT_SECRET = process.env.JWT_SECRET || 'your_super_secret_key';
 
@@ -161,12 +162,60 @@ const deleteAdmin = async (req, res) => {
 
 // ✅ Forgot Password
 const forgotPassword = async (req, res) => {
-  res.status(200).json({ message: 'Forgot password endpoint working' });
+  try {
+    const { email } = req.body;
+    if (!email) return res.status(400).json({ success: false, message: 'Email is required' });
+
+    const user = await User.findOne({ email: email.toLowerCase().trim() });
+    if (!user) return res.status(404).json({ success: false, message: 'User not found' });
+
+    // Generate a 6-digit reset code
+    const resetCode = Math.floor(100000 + Math.random() * 900000);
+
+    // Save code & expiry to user document
+    user.resetCode = resetCode;
+    user.resetCodeExpiry = Date.now() + 10 * 60 * 1000; // 10 minutes
+    await user.save();
+
+    // Send email
+    const emailService = new EmailService();
+    await emailService.sendPasswordResetEmail(user.email, resetCode);
+
+    res.json({
+      success: true,
+      message: 'Password reset code sent to email'
+    });
+  } catch (err) {
+    console.error('❌ Forgot password error:', err);
+    res.status(500).json({ success: false, message: 'Server error', error: err.message });
+  }
 };
 
 // ✅ Reset Password
 const resetPassword = async (req, res) => {
-  res.status(200).json({ message: 'Reset password endpoint working' });
+  try {
+    const { email, resetCode, newPassword } = req.body;
+    if (!email || !resetCode || !newPassword) {
+      return res.status(400).json({ success: false, message: 'Email, code, and new password are required' });
+    }
+
+    const user = await User.findOne({ email: email.toLowerCase().trim() });
+    if (!user) return res.status(404).json({ success: false, message: 'User not found' });
+
+    if (user.resetCode !== Number(resetCode) || Date.now() > user.resetCodeExpiry) {
+      return res.status(400).json({ success: false, message: 'Invalid or expired reset code' });
+    }
+
+    user.password = newPassword;
+    user.resetCode = undefined;
+    user.resetCodeExpiry = undefined;
+    await user.save();
+
+    res.json({ success: true, message: 'Password has been reset successfully' });
+  } catch (err) {
+    console.error('❌ Reset password error:', err);
+    res.status(500).json({ success: false, message: 'Server error', error: err.message });
+  }
 };
 
 // ✅ Get Login Logs
