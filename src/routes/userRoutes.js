@@ -1,22 +1,21 @@
 const express = require('express');
 const router = express.Router();
 const multer = require('multer');
-const { storage } = require('../config/cloudinaryConfig');
+const { reportStorage, profileStorage } = require('../config/cloudinaryConfig'); // ✅ import profileStorage
 const { authMiddleware } = require('../middleware/authMiddleware');
 const { getUser, updateUser, getAllUsers, changePassword, updateProfilePic } = require('../controllers/userController');
 
-const upload = multer({ storage });
+// Use appropriate storage
+const uploadReport = multer({ storage: reportStorage });
+const uploadProfile = multer({ storage: profileStorage }); // ✅ for profile pics
 
-// Get current logged-in user
 // Get current logged-in user
 router.get('/me', authMiddleware, async (req, res) => {
   try {
-    // 🔹 Debug: log req.user
     console.log('📌 /users/me req.user:', req.user);
 
     const userId = req.user?.id;
     if (!userId) {
-      console.warn('⚠️ req.user is undefined, check your token and authMiddleware!');
       return res.status(401).json({ success: false, message: 'Unauthorized: no user info found' });
     }
 
@@ -45,11 +44,10 @@ router.get('/me', authMiddleware, async (req, res) => {
   }
 });
 
-
 router.get('/:id', authMiddleware, getUser);
-router.put('/:id', authMiddleware, upload.single('profilePic'), updateUser);
+router.put('/:id', authMiddleware, uploadProfile.single('profilePic'), updateUser); // ✅ use profileStorage
 router.put('/change-password/me', authMiddleware, changePassword);
-router.put('/profile-pic', authMiddleware, upload.single('profilePic'), updateProfilePic);
+router.put('/profile-pic', authMiddleware, uploadProfile.single('profilePic'), updateProfilePic); // ✅ use profileStorage
 router.get('/', authMiddleware, getAllUsers);
 
 module.exports = router;
