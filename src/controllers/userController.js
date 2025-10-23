@@ -193,50 +193,31 @@ exports.changePassword = async (req, res) => {
 };
 
 // ✅ Fixed: safer file + req.user.id check
-exports.updateProfilePic = async (req, res) => {
+// Update profile picture only
+const updateProfilePic = async (req, res) => {
   try {
-    const userId = req.user?.id;
+    const userId = req.user.id; // ✅ get logged-in user's ID from token
+    console.log('📸 Updating profile pic for user:', userId);
 
-    if (!userId) {
-      return res.status(401).json({ success: false, message: 'Unauthorized - No user ID' });
+    if (!req.file || !req.file.path) {
+      return res.status(400).json({ msg: 'No image uploaded' });
     }
 
-    console.log('🟡 Received request to update profile pic for user:', userId);
-    console.log('📦 File data from Multer:', req.file);
-
-    if (!req.file) {
-      return res.status(400).json({ success: false, message: 'No file uploaded' });
-    }
-
-    const profilePicUrl = req.file.secure_url || req.file.path;
-
-    console.log('🌤️ Uploaded to Cloudinary:', profilePicUrl);
-
-    const user = await User.findByIdAndUpdate(
-      userId,
-      { profilePic: profilePicUrl },
-      { new: true }
-    ).select('-password');
-
+    const user = await User.findById(userId);
     if (!user) {
-      return res.status(404).json({ success: false, message: 'User not found' });
+      return res.status(404).json({ msg: 'User not found' });
     }
 
-    res.json({
-      success: true,
-      message: 'Profile picture updated successfully',
-      data: user,
-    });
-  } catch (err) {
-    console.error('❌ Update profile pic error (full):', err);
-    res.status(500).json({
-      success: false,
-      message: 'Server error while updating profile picture',
-      error: err.message,
-      stack: err.stack, // TEMPORARY: so we can debug live
-    });
+    user.profilePic = req.file.path;
+    await user.save();
+
+    res.json({ msg: 'Profile picture updated successfully', profilePic: user.profilePic });
+  } catch (error) {
+    console.error('❌ Update profile picture error:', error);
+    res.status(500).json({ msg: 'Server error', error: error.message });
   }
 };
+
 
 
 
