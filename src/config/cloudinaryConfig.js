@@ -13,8 +13,13 @@ const reportStorage = new CloudinaryStorage({
   cloudinary,
   params: {
     folder: 'ecocheck-reports',
-    allowed_formats: ['jpg', 'png', 'jpeg'],
-    public_id: (req, file) => `report_${Date.now()}`,
+    allowed_formats: ['jpg', 'jpeg', 'png'],
+    public_id: (req, file) => {
+      const timestamp = Date.now();
+      const originalName = file.originalname.split('.')[0];
+      return `report_${originalName}_${timestamp}`;
+    },
+    transformation: [{ width: 800, height: 800, crop: 'limit' }], // optional: resize large images
   },
 });
 
@@ -23,12 +28,31 @@ const profileStorage = new CloudinaryStorage({
   cloudinary,
   params: {
     folder: 'profilePics',
-    allowed_formats: ['jpg', 'png', 'jpeg'],
-    public_id: (req, file) => `profile_${Date.now()}`,
+    allowed_formats: ['jpg', 'jpeg', 'png'],
+    public_id: (req, file) => {
+      const timestamp = Date.now();
+      const originalName = file.originalname.split('.')[0];
+      return `profile_${originalName}_${timestamp}`;
+    },
+    transformation: [{ width: 400, height: 400, crop: 'limit' }], // optional: resize avatars
   },
 });
 
-// ✅ Export all storage options
+// ✅ Helper function to verify Cloudinary is working
+const testCloudinary = async () => {
+  try {
+    const result = await cloudinary.api.resources({ max_results: 1 });
+    console.log('✅ Cloudinary connected. Latest resource:', result.resources[0]?.secure_url);
+  } catch (err) {
+    console.error('❌ Cloudinary test failed:', err.message);
+  }
+};
+
+// Run test in dev mode
+if (process.env.NODE_ENV !== 'production') {
+  testCloudinary();
+}
+
 module.exports = {
   cloudinary,
   reportStorage,
