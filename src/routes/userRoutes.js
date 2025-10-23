@@ -14,6 +14,8 @@ const {
 const uploadReport = multer({ storage: reportStorage });
 const uploadProfile = multer({ storage: profileStorage });
 
+// ✅ Static routes first
+
 // Get current logged-in user
 router.get('/me', authMiddleware, async (req, res) => {
   try {
@@ -45,11 +47,21 @@ router.get('/me', authMiddleware, async (req, res) => {
   }
 });
 
+// Change password for logged-in user
 router.put('/change-password/me', authMiddleware, changePassword);
+
+// Update profile picture for logged-in user
 router.put('/profile-pic', authMiddleware, uploadProfile.single('profilePic'), updateProfilePic);
+
+// ✅ Dynamic routes after static routes
+
+// Get user by ID
 router.get('/:id', authMiddleware, getUser);
+
+// Update user by ID
 router.put('/:id', authMiddleware, uploadProfile.single('profilePic'), updateUser);
 
+// Get all users
 router.get('/', authMiddleware, getAllUsers);
 
 module.exports = router;
