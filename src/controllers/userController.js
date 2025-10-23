@@ -1,7 +1,7 @@
 const User = require('../models/user');
 
 // Register new user
-exports.registerUser = async (req, res) => {
+const registerUser = async (req, res) => {
   try {
     const { firstName, middleInitial, lastName, email, contactNumber, password, bio } = req.body;
 
@@ -14,14 +14,10 @@ exports.registerUser = async (req, res) => {
     }
 
     const existingUser = await User.findOne({ email: email.toLowerCase().trim() });
-    if (existingUser) {
-      return res.status(400).json({ success: false, message: 'User already exists' });
-    }
+    if (existingUser) return res.status(400).json({ success: false, message: 'User already exists' });
 
     const existingContact = await User.findOne({ contactNumber });
-    if (existingContact) {
-      return res.status(400).json({ success: false, message: 'Contact number already registered' });
-    }
+    if (existingContact) return res.status(400).json({ success: false, message: 'Contact number already registered' });
 
     const user = new User({
       firstName,
@@ -31,7 +27,7 @@ exports.registerUser = async (req, res) => {
       contactNumber,
       password,
       bio: bio || '',
-      profilePic: req.file ? (req.file.path || req.file.secure_url) : ''
+      profilePic: req.file ? (req.file.secure_url || req.file.path) : ''
     });
 
     await user.save();
@@ -58,7 +54,7 @@ exports.registerUser = async (req, res) => {
 };
 
 // Get single user
-exports.getUser = async (req, res) => {
+const getUser = async (req, res) => {
   try {
     const user = await User.findById(req.params.id).select('-password');
     if (!user) return res.status(404).json({ success: false, message: 'User not found' });
@@ -84,8 +80,8 @@ exports.getUser = async (req, res) => {
   }
 };
 
-// ✅ Fixed: safer file + contactNumber handling
-exports.updateUser = async (req, res) => {
+// Update user
+const updateUser = async (req, res) => {
   try {
     const { firstName, middleInitial, lastName, contactNumber, bio, isActive } = req.body;
     const updateFields = {};
@@ -101,22 +97,18 @@ exports.updateUser = async (req, res) => {
       }
 
       const existingContact = await User.findOne({ contactNumber, _id: { $ne: req.params.id } });
-      if (existingContact) {
-        return res.status(400).json({ success: false, message: 'Contact number already registered by another user' });
-      }
+      if (existingContact) return res.status(400).json({ success: false, message: 'Contact number already registered by another user' });
 
       updateFields.contactNumber = contactNumber;
     }
 
     if (bio !== undefined) updateFields.bio = bio;
 
-    // ✅ Fixed Cloudinary / Multer path checking
     if (req.file && (req.file.path || req.file.secure_url)) {
       updateFields.profilePic = req.file.secure_url || req.file.path;
     }
 
     const user = await User.findByIdAndUpdate(req.params.id, updateFields, { new: true }).select('-password');
-
     if (!user) return res.status(404).json({ success: false, message: 'User not found' });
 
     res.json({
@@ -142,7 +134,7 @@ exports.updateUser = async (req, res) => {
 };
 
 // Get all users
-exports.getAllUsers = async (req, res) => {
+const getAllUsers = async (req, res) => {
   try {
     const users = await User.find().select('-password');
     const data = users.map(u => ({
@@ -165,15 +157,13 @@ exports.getAllUsers = async (req, res) => {
   }
 };
 
-// ✅ Fixed: req.user.id safety and password match
-exports.changePassword = async (req, res) => {
+// Change password
+const changePassword = async (req, res) => {
   try {
     const { currentPassword, newPassword } = req.body;
-    if (!currentPassword || !newPassword) {
-      return res.status(400).json({ success: false, message: 'Both fields are required' });
-    }
+    if (!currentPassword || !newPassword) return res.status(400).json({ success: false, message: 'Both fields are required' });
 
-    const userId = req.user?.id; // ✅ safer access
+    const userId = req.user?.id;
     if (!userId) return res.status(401).json({ success: false, message: 'Unauthorized' });
 
     const user = await User.findById(userId);
@@ -192,27 +182,20 @@ exports.changePassword = async (req, res) => {
   }
 };
 
-// ✅ Fixed: safer file + req.user.id check
-// Update profile picture only
+// Update profile picture
 const updateProfilePic = async (req, res) => {
   try {
-    console.log('📸 Uploaded file:', req.file); // Debug uploaded file
+    console.log('📸 Uploaded file:', req.file);
 
     const userId = req.user?.id;
     if (!userId) return res.status(401).json({ success: false, msg: 'Unauthorized' });
-
-    if (!req.file) {
-      return res.status(400).json({ success: false, msg: 'No image uploaded' });
-    }
+    if (!req.file) return res.status(400).json({ success: false, msg: 'No image uploaded' });
 
     const user = await User.findById(userId);
     if (!user) return res.status(404).json({ success: false, msg: 'User not found' });
 
-    // ✅ Use secure_url if available (Cloudinary) or fallback to path
     const imageUrl = req.file.secure_url || req.file.path;
-    if (!imageUrl) {
-      return res.status(500).json({ success: false, msg: 'Failed to get uploaded image URL' });
-    }
+    if (!imageUrl) return res.status(500).json({ success: false, msg: 'Failed to get uploaded image URL' });
 
     user.profilePic = imageUrl;
     await user.save();
@@ -220,57 +203,35 @@ const updateProfilePic = async (req, res) => {
     res.json({
       success: true,
       msg: 'Profile picture updated successfully',
-      profilePic: user.profilePic,
+      profilePic: user.profilePic
     });
   } catch (error) {
     console.error('❌ Update profile picture error:', error);
-    // Return full error for easier debugging
     res.status(500).json({
       success: false,
       msg: 'Server error updating profile picture',
       error: error.message,
-      stack: error.stack,
+      stack: error.stack
     });
   }
 };
 
-module.exports = { updateProfilePic };
-
-
-
-exports.updateProfilePic = updateProfilePic; // ✅ add this
-
-
-// Create new admin (superadmin only)
-exports.createAdmin = async (req, res) => {
+// Create admin
+const createAdmin = async (req, res) => {
   try {
     const { email, password } = req.body;
-
-    if (!email || !password) {
-      return res.status(400).json({ success: false, message: 'Email and password are required' });
-    }
+    if (!email || !password) return res.status(400).json({ success: false, message: 'Email and password are required' });
 
     const existingUser = await User.findOne({ email: email.toLowerCase().trim() });
-    if (existingUser) {
-      return res.status(400).json({ success: false, message: 'User with this email already exists' });
-    }
+    if (existingUser) return res.status(400).json({ success: false, message: 'User with this email already exists' });
 
-    const admin = new User({
-      email: email.toLowerCase().trim(),
-      password,
-      role: 'admin',
-    });
-
+    const admin = new User({ email: email.toLowerCase().trim(), password, role: 'admin' });
     await admin.save();
 
     res.status(201).json({
       success: true,
       message: 'Admin created successfully',
-      data: {
-        id: admin._id,
-        email: admin.email,
-        role: admin.role
-      }
+      data: { id: admin._id, email: admin.email, role: admin.role }
     });
   } catch (err) {
     console.error('❌ Create admin error:', err.message);
@@ -278,3 +239,13 @@ exports.createAdmin = async (req, res) => {
   }
 };
 
+// ✅ Export all controllers
+module.exports = {
+  registerUser,
+  getUser,
+  updateUser,
+  getAllUsers,
+  changePassword,
+  updateProfilePic,
+  createAdmin
+};
