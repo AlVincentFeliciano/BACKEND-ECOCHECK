@@ -1,7 +1,7 @@
 const cloudinary = require('cloudinary').v2;
 const { CloudinaryStorage } = require('multer-storage-cloudinary');
 
-// ✅ Load from .env
+// ✅ Configure Cloudinary with environment variables
 cloudinary.config({
   cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
   api_key: process.env.CLOUDINARY_API_KEY,
@@ -9,7 +9,7 @@ cloudinary.config({
 });
 
 // ✅ Storage for report uploads
-const storage = new CloudinaryStorage({
+const reportStorage = new CloudinaryStorage({
   cloudinary,
   params: {
     folder: 'ecocheck-reports',
@@ -28,4 +28,9 @@ const profileStorage = new CloudinaryStorage({
   },
 });
 
-module.exports = { cloudinary, storage, profileStorage };
+// ✅ Export all storage options
+module.exports = {
+  cloudinary,
+  reportStorage,
+  profileStorage,
+};
