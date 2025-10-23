@@ -196,27 +196,47 @@ exports.changePassword = async (req, res) => {
 // Update profile picture only
 const updateProfilePic = async (req, res) => {
   try {
-    const userId = req.user.id; // ✅ get logged-in user's ID from token
-    console.log('📸 Updating profile pic for user:', userId);
+    console.log('📸 Uploaded file:', req.file); // Debug uploaded file
 
-    if (!req.file || !req.file.path) {
-      return res.status(400).json({ msg: 'No image uploaded' });
+    const userId = req.user?.id;
+    if (!userId) return res.status(401).json({ success: false, msg: 'Unauthorized' });
+
+    if (!req.file) {
+      return res.status(400).json({ success: false, msg: 'No image uploaded' });
     }
 
     const user = await User.findById(userId);
-    if (!user) {
-      return res.status(404).json({ msg: 'User not found' });
+    if (!user) return res.status(404).json({ success: false, msg: 'User not found' });
+
+    // ✅ Use secure_url if available (Cloudinary) or fallback to path
+    const imageUrl = req.file.secure_url || req.file.path;
+    if (!imageUrl) {
+      return res.status(500).json({ success: false, msg: 'Failed to get uploaded image URL' });
     }
 
-    user.profilePic = req.file.path;
+    user.profilePic = imageUrl;
     await user.save();
 
-    res.json({ msg: 'Profile picture updated successfully', profilePic: user.profilePic });
+    res.json({
+      success: true,
+      msg: 'Profile picture updated successfully',
+      profilePic: user.profilePic,
+    });
   } catch (error) {
     console.error('❌ Update profile picture error:', error);
-    res.status(500).json({ msg: 'Server error', error: error.message });
+    // Return full error for easier debugging
+    res.status(500).json({
+      success: false,
+      msg: 'Server error updating profile picture',
+      error: error.message,
+      stack: error.stack,
+    });
   }
 };
+
+module.exports = { updateProfilePic };
+
+
 
 exports.updateProfilePic = updateProfilePic; // ✅ add this
 
