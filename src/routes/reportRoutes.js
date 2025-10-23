@@ -3,9 +3,9 @@ const router = express.Router();
 const multer = require('multer');
 const { createReport, getReports, updateReportStatus } = require('../controllers/reportController');
 const { authMiddleware } = require('../middleware/authMiddleware');
-const { storage } = require('../config/cloudinaryConfig');
+const { reportStorage } = require('../config/cloudinaryConfig');
 
-const upload = multer({ storage });
+const upload = multer({ storage: reportStorage });
 
 router.post('/', authMiddleware, upload.single('photo'), createReport);
 router.get('/', authMiddleware, getReports);
