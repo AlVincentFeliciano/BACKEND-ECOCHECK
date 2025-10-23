@@ -257,3 +257,13 @@ exports.createAdmin = async (req, res) => {
     res.status(500).json({ success: false, message: 'Server error' });
   }
 };
+
+module.exports = {
+  registerUser,
+  createAdmin,
+  getAllUsers,
+  updateUser,
+  getUser,
+  changePassword,
+  updateProfilePic // ✅ add this line
+};
