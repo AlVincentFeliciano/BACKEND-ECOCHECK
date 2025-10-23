@@ -218,7 +218,7 @@ const updateProfilePic = async (req, res) => {
   }
 };
 
-
+exports.updateProfilePic = updateProfilePic; // ✅ add this
 
 
 // Create new admin (superadmin only)
@@ -258,12 +258,3 @@ exports.createAdmin = async (req, res) => {
   }
 };
 
-module.exports = {
-  registerUser,
-  createAdmin,
-  getAllUsers,
-  updateUser,
-  getUser,
-  changePassword,
-  updateProfilePic // ✅ add this line
-};
