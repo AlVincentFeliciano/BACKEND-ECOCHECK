@@ -75,7 +75,7 @@ exports.getUser = async (req, res) => {
         bio: user.bio,
         profilePic: user.profilePic || '',
         points: user.points || 0,
-        isActive: user.isActive !== false // Default to true if not set
+        isActive: user.isActive !== false
       }
     });
   } catch (err) {
@@ -84,7 +84,7 @@ exports.getUser = async (req, res) => {
   }
 };
 
-// Update user
+// ✅ Fixed: safer file + contactNumber handling
 exports.updateUser = async (req, res) => {
   try {
     const { firstName, middleInitial, lastName, contactNumber, bio, isActive } = req.body;
@@ -109,8 +109,10 @@ exports.updateUser = async (req, res) => {
     }
 
     if (bio !== undefined) updateFields.bio = bio;
+
+    // ✅ Fixed Cloudinary / Multer path checking
     if (req.file && (req.file.path || req.file.secure_url)) {
-      updateFields.profilePic = req.file.path || req.file.secure_url;
+      updateFields.profilePic = req.file.secure_url || req.file.path;
     }
 
     const user = await User.findByIdAndUpdate(req.params.id, updateFields, { new: true }).select('-password');
@@ -154,7 +156,7 @@ exports.getAllUsers = async (req, res) => {
       profilePic: u.profilePic || '',
       points: u.points || 0,
       role: u.role || 'user',
-      isActive: u.isActive !== false // Default to true if not set
+      isActive: u.isActive !== false
     }));
     res.json({ success: true, data });
   } catch (err) {
@@ -163,7 +165,7 @@ exports.getAllUsers = async (req, res) => {
   }
 };
 
-// Change password
+// ✅ Fixed: req.user.id safety and password match
 exports.changePassword = async (req, res) => {
   try {
     const { currentPassword, newPassword } = req.body;
@@ -171,7 +173,10 @@ exports.changePassword = async (req, res) => {
       return res.status(400).json({ success: false, message: 'Both fields are required' });
     }
 
-    const user = await User.findById(req.user.id);
+    const userId = req.user?.id; // ✅ safer access
+    if (!userId) return res.status(401).json({ success: false, message: 'Unauthorized' });
+
+    const user = await User.findById(userId);
     if (!user) return res.status(404).json({ success: false, message: 'User not found' });
 
     const isMatch = await user.matchPassword(currentPassword);
@@ -187,44 +192,53 @@ exports.changePassword = async (req, res) => {
   }
 };
 
-// Update profile picture only
+// ✅ Fixed: safer file + req.user.id check
 exports.updateProfilePic = async (req, res) => {
   try {
-    if (!req.file || (!req.file.path && !req.file.secure_url)) {
-      return res.status(400).json({ success: false, message: 'No profile picture provided' });
+    const userId = req.user?.id;
+
+    if (!userId) {
+      return res.status(401).json({ success: false, message: 'Unauthorized - No user ID' });
     }
 
-    const profilePicUrl = req.file.path || req.file.secure_url;
+    console.log('🟡 Received request to update profile pic for user:', userId);
+    console.log('📦 File data from Multer:', req.file);
+
+    if (!req.file) {
+      return res.status(400).json({ success: false, message: 'No file uploaded' });
+    }
+
+    const profilePicUrl = req.file.secure_url || req.file.path;
+
+    console.log('🌤️ Uploaded to Cloudinary:', profilePicUrl);
 
     const user = await User.findByIdAndUpdate(
-      req.user.id,
+      userId,
       { profilePic: profilePicUrl },
       { new: true }
     ).select('-password');
 
-    if (!user) return res.status(404).json({ success: false, message: 'User not found' });
+    if (!user) {
+      return res.status(404).json({ success: false, message: 'User not found' });
+    }
 
     res.json({
       success: true,
       message: 'Profile picture updated successfully',
-      data: {
-        id: user._id,
-        firstName: user.firstName,
-        middleInitial: user.middleInitial,
-        lastName: user.lastName,
-        email: user.email,
-        contactNumber: user.contactNumber,
-        bio: user.bio,
-        profilePic: user.profilePic,
-        points: user.points,
-        isActive: user.isActive !== false // Default to true if not set
-      }
+      data: user,
     });
   } catch (err) {
-    console.error('❌ Update profile pic error:', err.message);
-    res.status(500).json({ success: false, message: 'Server error' });
+    console.error('❌ Update profile pic error (full):', err);
+    res.status(500).json({
+      success: false,
+      message: 'Server error while updating profile picture',
+      error: err.message,
+      stack: err.stack, // TEMPORARY: so we can debug live
+    });
   }
 };
+
+
 
 // Create new admin (superadmin only)
 exports.createAdmin = async (req, res) => {

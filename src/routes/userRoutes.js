@@ -4,21 +4,22 @@ const multer = require('multer');
 const { authMiddleware, isSuperAdmin } = require('../middleware/authMiddleware');
 const { registerUser, createAdmin, getAllUsers, updateUser, getUser, changePassword, updateProfilePic } = require('../controllers/userController');
 const { profileStorage } = require('../config/cloudinaryConfig');
+
 const upload = multer({ storage: profileStorage });
 
-// User registration
+// Register
 router.post('/register', registerUser);
 
-// Superadmin can create new admins
+// Superadmin create admin
 router.post('/create-admin', authMiddleware, isSuperAdmin, createAdmin);
 
 // Get all users
 router.get('/', authMiddleware, getAllUsers);
 
-// Get a single user
+// Get one user
 router.get('/:id', authMiddleware, getUser);
 
-// Update user (bio + profilePic)
+// Update user info (bio, name, picture)
 router.put('/:id', authMiddleware, upload.single('profilePic'), updateUser);
 
 // Change password
