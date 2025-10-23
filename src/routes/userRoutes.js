@@ -45,10 +45,11 @@ router.get('/me', authMiddleware, async (req, res) => {
   }
 });
 
-router.get('/:id', authMiddleware, getUser);
-router.put('/:id', authMiddleware, uploadProfile.single('profilePic'), updateUser);
 router.put('/change-password/me', authMiddleware, changePassword);
 router.put('/profile-pic', authMiddleware, uploadProfile.single('profilePic'), updateProfilePic);
+router.get('/:id', authMiddleware, getUser);
+router.put('/:id', authMiddleware, uploadProfile.single('profilePic'), updateUser);
+
 router.get('/', authMiddleware, getAllUsers);
 
 module.exports = router;
