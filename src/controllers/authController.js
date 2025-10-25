@@ -108,6 +108,11 @@ const loginUser = async (req, res) => {
 // ✅ Register Admin (protected)
 const registerAdmin = async (req, res) => {
   try {
+    // Check if user is superadmin
+    if (req.user.role !== 'superadmin') {
+      return res.status(403).json({ message: 'Access denied. Only superadmin can add admins.' });
+    }
+
     const { firstName, middleInitial, lastName, email, contactNumber, password, role } = req.body;
     const normalizedEmail = email.toLowerCase().trim();
 
@@ -139,6 +144,11 @@ const registerAdmin = async (req, res) => {
 // ✅ Get Admins
 const getAdmins = async (req, res) => {
   try {
+    // Check if user is superadmin
+    if (req.user.role !== 'superadmin') {
+      return res.status(403).json({ message: 'Access denied. Only superadmin can view admins.' });
+    }
+
     const admins = await User.find({ role: { $in: ['admin', 'superadmin'] } }).select('-password');
     res.json(admins);
   } catch (err) {
@@ -150,12 +160,45 @@ const getAdmins = async (req, res) => {
 // ✅ Delete Admin
 const deleteAdmin = async (req, res) => {
   try {
+    // Check if user is superadmin
+    if (req.user.role !== 'superadmin') {
+      return res.status(403).json({ message: 'Access denied. Only superadmin can delete admins.' });
+    }
+
     const { adminId } = req.params;
     const deletedAdmin = await User.findByIdAndDelete(adminId);
     if (!deletedAdmin) return res.status(404).json({ message: 'Admin not found' });
     res.json({ success: true, message: 'Admin deleted successfully' });
   } catch (err) {
     console.error('❌ Delete admin error:', err.message);
+    res.status(500).json({ message: 'Server error' });
+  }
+};
+
+// ✅ Update Admin (Deactivate/Reactivate)
+const updateAdmin = async (req, res) => {
+  try {
+    // Check if user is superadmin
+    if (req.user.role !== 'superadmin') {
+      return res.status(403).json({ message: 'Access denied. Only superadmin can update admins.' });
+    }
+
+    const { adminId } = req.params;
+    const { isActive } = req.body;
+
+    const admin = await User.findById(adminId);
+    if (!admin) return res.status(404).json({ message: 'Admin not found' });
+
+    if (!['admin', 'superadmin'].includes(admin.role)) {
+      return res.status(400).json({ message: 'User is not an admin' });
+    }
+
+    admin.isActive = isActive;
+    await admin.save();
+
+    res.json({ success: true, message: 'Admin updated successfully', admin: { ...admin._doc, password: undefined } });
+  } catch (err) {
+    console.error('❌ Update admin error:', err.message);
     res.status(500).json({ message: 'Server error' });
   }
 };
@@ -221,6 +264,11 @@ const resetPassword = async (req, res) => {
 // ✅ Get Login Logs
 const getLoginLogs = async (req, res) => {
   try {
+    // Check if user is superadmin
+    if (req.user.role !== 'superadmin') {
+      return res.status(403).json({ message: 'Access denied. Only superadmin can view login logs.' });
+    }
+
     const logs = await LoginLog.find().populate('user', 'email role');
     res.json(logs);
   } catch (err) {
@@ -235,6 +283,7 @@ module.exports = {
   registerAdmin,
   getAdmins,
   deleteAdmin,
+  updateAdmin,
   forgotPassword,
   resetPassword,
   getLoginLogs,
