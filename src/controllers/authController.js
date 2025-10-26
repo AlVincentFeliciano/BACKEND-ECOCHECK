@@ -266,14 +266,25 @@ const getLoginLogs = async (req, res) => {
   try {
     // Check if user is superadmin
     if (req.user.role !== 'superadmin') {
-      return res.status(403).json({ message: 'Access denied. Only superadmin can view login logs.' });
+      return res.status(403).json({ success: false, message: 'Access denied. Only superadmin can view login logs.' });
     }
 
-    const logs = await LoginLog.find().populate('user', 'email role');
-    res.json(logs);
+    const limit = parseInt(req.query.limit) || 100;
+    const logs = await LoginLog.find()
+      .populate('user', 'email role firstName lastName')
+      .sort({ loginTime: -1 })
+      .limit(limit);
+    
+    console.log('✅ Fetched login logs:', logs.length);
+    
+    res.json({ 
+      success: true, 
+      data: logs,
+      count: logs.length 
+    });
   } catch (err) {
     console.error('❌ Get login logs error:', err.message);
-    res.status(500).json({ message: 'Server error' });
+    res.status(500).json({ success: false, message: 'Server error', error: err.message });
   }
 };
 
