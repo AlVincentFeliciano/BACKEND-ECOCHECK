@@ -5,15 +5,18 @@ const sgMail = require('@sendgrid/mail');
 class EmailService {
   constructor() {
     try {
-      // Check if we should use SendGrid (recommended)
-      if (process.env.SENDGRID_API_KEY) {
+      // Force SendGrid if API key exists (prioritize over others)
+      if (process.env.SENDGRID_API_KEY && process.env.SENDGRID_API_KEY.startsWith('SG.')) {
         sgMail.setApiKey(process.env.SENDGRID_API_KEY);
         this.useSendGrid = true;
+        this.useResend = false;
         this.fromEmail = process.env.SENDGRID_FROM_EMAIL || 'noreply@ecocheck.app';
         console.log('✅ Email Service initialized with SendGrid');
+        console.log('📧 From email:', this.fromEmail);
       } else if (process.env.RESEND_API_KEY) {
         // Using Resend API (alternative)
         this.useResend = true;
+        this.useSendGrid = false;
         console.log('✅ Email Service initialized with Resend API');
       } else if (process.env.EMAIL_USER && process.env.EMAIL_PASS) {
         // Fallback to Gmail SMTP
