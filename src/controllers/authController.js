@@ -92,8 +92,8 @@ const loginUser = async (req, res) => {
     const isMatch = await user.matchPassword(password);
     if (!isMatch) return res.status(400).json({ message: 'Invalid credentials' });
 
-    // Check if email is verified
-    if (!user.isEmailVerified) {
+    // Check if email is verified (only for regular users, not admins)
+    if (!user.isEmailVerified && user.role === 'user') {
       return res.status(403).json({ 
         message: 'Please verify your email before logging in',
         requiresVerification: true,
