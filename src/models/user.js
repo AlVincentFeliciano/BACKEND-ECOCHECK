@@ -18,6 +18,11 @@ const userSchema = new mongoose.Schema({
   points: { type: Number, default: 0 },
   isActive: { type: Boolean, default: true },
 
+  // Email verification
+  isEmailVerified: { type: Boolean, default: false },
+  verificationCode: { type: String, default: null },
+  verificationCodeExpiry: { type: Date, default: null },
+
   // Optional: for forgot password
   resetCode: { type: String, default: null },
   resetCodeExpires: { type: Date, default: null }

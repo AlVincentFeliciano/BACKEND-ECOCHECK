@@ -35,6 +35,10 @@ const registerUser = async (req, res) => {
     const existingContact = await User.findOne({ contactNumber });
     if (existingContact) return res.status(400).json({ message: 'Contact number already registered' });
 
+    // Generate 6-digit verification code
+    const verificationCode = Math.floor(100000 + Math.random() * 900000).toString();
+    const verificationCodeExpiry = Date.now() + 15 * 60 * 1000; // 15 minutes
+
     const user = new User({
       firstName,
       middleInitial,
@@ -43,16 +47,32 @@ const registerUser = async (req, res) => {
       contactNumber,
       password,
       role: 'user',
+      isEmailVerified: false,
+      verificationCode,
+      verificationCodeExpiry,
     });
 
     await user.save();
-    const token = generateToken(user);
+
+    // Send verification email
+    try {
+      const emailService = new EmailService();
+      await emailService.sendVerificationEmail(
+        normalizedEmail,
+        verificationCode,
+        firstName
+      );
+      console.log('✅ Verification email sent to:', normalizedEmail);
+    } catch (emailError) {
+      console.error('❌ Failed to send verification email:', emailError.message);
+      // Don't fail registration if email fails
+    }
 
     res.status(201).json({
       success: true,
-      token,
-      role: user.role,
-      message: 'User registered successfully',
+      message: 'Registration successful. Please check your email for verification code.',
+      email: normalizedEmail,
+      requiresVerification: true,
     });
   } catch (err) {
     console.error('❌ Registration error:', err.message);
@@ -71,6 +91,15 @@ const loginUser = async (req, res) => {
 
     const isMatch = await user.matchPassword(password);
     if (!isMatch) return res.status(400).json({ message: 'Invalid credentials' });
+
+    // Check if email is verified
+    if (!user.isEmailVerified) {
+      return res.status(403).json({ 
+        message: 'Please verify your email before logging in',
+        requiresVerification: true,
+        email: user.email
+      });
+    }
 
     if (user.isActive === false) {
       return res.status(403).json({ message: 'Account has been deactivated. Please contact support.' });
@@ -102,6 +131,58 @@ const loginUser = async (req, res) => {
   } catch (err) {
     console.error('❌ Login error:', err.message);
     res.status(500).json({ message: 'Server error' });
+  }
+};
+
+// ✅ Verify Email
+const verifyEmail = async (req, res) => {
+  try {
+    const { email, code } = req.body;
+    const normalizedEmail = email.toLowerCase().trim();
+
+    if (!normalizedEmail || !code) {
+      return res.status(400).json({ success: false, message: 'Email and verification code are required' });
+    }
+
+    const user = await User.findOne({ email: normalizedEmail });
+    if (!user) {
+      return res.status(404).json({ success: false, message: 'User not found' });
+    }
+
+    if (user.isEmailVerified) {
+      return res.status(400).json({ success: false, message: 'Email already verified' });
+    }
+
+    if (!user.verificationCode || !user.verificationCodeExpiry) {
+      return res.status(400).json({ success: false, message: 'No verification code found. Please request a new one.' });
+    }
+
+    if (Date.now() > user.verificationCodeExpiry) {
+      return res.status(400).json({ success: false, message: 'Verification code expired. Please request a new one.' });
+    }
+
+    if (user.verificationCode !== code) {
+      return res.status(400).json({ success: false, message: 'Invalid verification code' });
+    }
+
+    // Verification successful
+    user.isEmailVerified = true;
+    user.verificationCode = null;
+    user.verificationCodeExpiry = null;
+    await user.save();
+
+    // Generate token for auto-login after verification
+    const token = generateToken(user);
+
+    res.json({
+      success: true,
+      message: 'Email verified successfully',
+      token,
+      role: user.role,
+    });
+  } catch (err) {
+    console.error('❌ Email verification error:', err.message);
+    res.status(500).json({ success: false, message: 'Server error' });
   }
 };
 
@@ -319,6 +400,7 @@ const logoutUser = async (req, res) => {
 module.exports = {
   registerUser,
   loginUser,
+  verifyEmail,
   registerAdmin,
   getAdmins,
   deleteAdmin,
