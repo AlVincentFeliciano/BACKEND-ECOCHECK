@@ -19,6 +19,10 @@ const loginLogSchema = new mongoose.Schema({
     type: Date,
     default: Date.now
   },
+  logoutTime: {
+    type: Date,
+    default: null
+  },
   ipAddress: {
     type: String,
     default: 'Unknown'

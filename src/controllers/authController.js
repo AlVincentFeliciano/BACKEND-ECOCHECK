@@ -288,6 +288,34 @@ const getLoginLogs = async (req, res) => {
   }
 };
 
+// ✅ Logout User (Record logout time)
+const logoutUser = async (req, res) => {
+  try {
+    const userId = req.user.id;
+    const userRole = req.user.role;
+
+    // Only track logout for admin/superadmin
+    if (['admin', 'superadmin'].includes(userRole)) {
+      // Find the most recent login log for this user without a logout time
+      const loginLog = await LoginLog.findOne({
+        user: userId,
+        logoutTime: null
+      }).sort({ loginTime: -1 });
+
+      if (loginLog) {
+        loginLog.logoutTime = new Date();
+        await loginLog.save();
+        console.log('✅ Logout time recorded for:', loginLog.email);
+      }
+    }
+
+    res.json({ success: true, message: 'Logout successful' });
+  } catch (err) {
+    console.error('❌ Logout error:', err.message);
+    res.status(500).json({ success: false, message: 'Server error', error: err.message });
+  }
+};
+
 module.exports = {
   registerUser,
   loginUser,
@@ -298,4 +326,5 @@ module.exports = {
   forgotPassword,
   resetPassword,
   getLoginLogs,
+  logoutUser,
 };

@@ -3,12 +3,13 @@ const express = require('express');
 const router = express.Router();
 
 // Import controller functions
-const { registerUser, loginUser, registerAdmin, getAdmins, deleteAdmin, updateAdmin, forgotPassword, resetPassword, getLoginLogs } = require('../controllers/authController');
+const { registerUser, loginUser, registerAdmin, getAdmins, deleteAdmin, updateAdmin, forgotPassword, resetPassword, getLoginLogs, logoutUser } = require('../controllers/authController');
 const { authMiddleware } = require('../middleware/authMiddleware'); // ✅ destructure here
 
 // Routes
 router.post('/register', registerUser);
 router.post('/login', loginUser);
+router.post('/logout', authMiddleware, logoutUser);
 
 // Password reset routes
 router.post('/forgot-password', forgotPassword);
