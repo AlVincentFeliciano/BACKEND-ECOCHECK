@@ -294,7 +294,7 @@ const forgotPassword = async (req, res) => {
     if (!user) return res.status(404).json({ success: false, message: 'User not found' });
 
     // Generate a 6-digit reset code
-    const resetCode = Math.floor(100000 + Math.random() * 900000);
+    const resetCode = Math.floor(100000 + Math.random() * 900000).toString();
 
     // Save code & expiry to user document
     user.resetCode = resetCode;
@@ -326,7 +326,7 @@ const resetPassword = async (req, res) => {
     const user = await User.findOne({ email: email.toLowerCase().trim() });
     if (!user) return res.status(404).json({ success: false, message: 'User not found' });
 
-    if (user.resetCode !== Number(resetCode) || Date.now() > user.resetCodeExpiry) {
+    if (user.resetCode !== resetCode || Date.now() > user.resetCodeExpiry) {
       return res.status(400).json({ success: false, message: 'Invalid or expired reset code' });
     }
 
