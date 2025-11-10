@@ -136,7 +136,23 @@ const updateUser = async (req, res) => {
 // Get all users
 const getAllUsers = async (req, res) => {
   try {
-    const users = await User.find().select('-password');
+    console.log('📊 Get Users - User:', req.user);
+    let query = {};
+    
+    // Filter by location for admins
+    if (req.user.role === 'admin') {
+      if (!req.user.location) {
+        console.log('❌ Admin location not set');
+        return res.status(403).json({ success: false, message: 'Admin location not set. Contact superadmin.' });
+      }
+      console.log('📊 Filtering users by location:', req.user.location);
+      query.location = req.user.location;
+    }
+    // Superadmin sees all users (no filter)
+    
+    const users = await User.find(query).select('-password');
+    console.log('📊 Users found:', users.length);
+    
     const data = users.map(u => ({
       id: u._id,
       firstName: u.firstName,
@@ -148,6 +164,7 @@ const getAllUsers = async (req, res) => {
       profilePic: u.profilePic || '',
       points: u.points || 0,
       role: u.role || 'user',
+      location: u.location || '',
       isActive: u.isActive !== false
     }));
     res.json({ success: true, data });
