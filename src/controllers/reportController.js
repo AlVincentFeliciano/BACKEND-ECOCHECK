@@ -6,7 +6,7 @@ const createReport = async (req, res) => {
   try {
     const { 
       name, firstName, middleName, lastName, 
-      contact, description, location, landmark, latitude, longitude 
+      contact, description, location, userLocation, landmark, latitude, longitude 
     } = req.body;
 
     if (!req.file) {
@@ -22,6 +22,13 @@ const createReport = async (req, res) => {
       displayName = nameComponents.join(' ') || name;
     }
 
+    // Get user's registered location if not provided
+    let finalUserLocation = userLocation;
+    if (!finalUserLocation) {
+      const user = await User.findById(req.user.id);
+      finalUserLocation = user?.location || null;
+    }
+
     const newReport = await Report.create({
       name: displayName,
       firstName,
@@ -29,7 +36,8 @@ const createReport = async (req, res) => {
       lastName,
       contact,
       description,
-      location,
+      location, // Geocoded address for display
+      userLocation: finalUserLocation, // User's registered location for filtering
       landmark,
       latitude,
       longitude,
@@ -48,19 +56,29 @@ const createReport = async (req, res) => {
 // Get all reports for the logged-in user
 const getReports = async (req, res) => {
   try {
+    console.log('📊 Get Reports - User:', req.user);
     let reports;
     if (req.user.role === 'superadmin') {
       // Superadmin sees ALL reports
       reports = await Report.find().populate('user', 'firstName lastName email');
+      console.log('📊 Superadmin - Total reports:', reports.length);
     } else if (req.user.role === 'admin') {
       // Admin sees only reports from their assigned location
       if (!req.user.location) {
+        console.log('❌ Admin location not set');
         return res.status(403).json({ error: 'Admin location not set. Contact superadmin.' });
       }
-      reports = await Report.find({ location: req.user.location }).populate('user', 'firstName lastName email');
+      console.log('📊 Filtering reports by userLocation:', req.user.location);
+      reports = await Report.find({ userLocation: req.user.location }).populate('user', 'firstName lastName email');
+      console.log('📊 Admin reports found:', reports.length);
+      
+      // Debug: Show all report locations
+      const allReports = await Report.find();
+      console.log('📊 All report userLocations in DB:', allReports.map(r => ({ id: r._id, userLocation: r.userLocation, location: r.location })));
     } else {
       // Regular users see only their own reports
       reports = await Report.find({ user: req.user.id }).populate('user', 'firstName lastName email');
+      console.log('📊 User reports found:', reports.length);
     }
     res.json(reports);
   } catch (err) {

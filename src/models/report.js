@@ -8,7 +8,8 @@ const reportSchema = new mongoose.Schema(
     lastName: String,
     contact: String,
     description: String,
-    location: String,
+    location: String, // Geocoded address (e.g., "513 Calulut - Del Carmen Road, San Fernando City")
+    userLocation: String, // User's registered location (Del Carmen or Bulaon) - used for filtering
     landmark: String,
     latitude: Number,
     longitude: Number,

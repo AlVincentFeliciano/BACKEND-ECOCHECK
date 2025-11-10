@@ -9,7 +9,7 @@ const JWT_SECRET = process.env.JWT_SECRET || 'your_super_secret_key';
 // ✅ Generate JWT token
 const generateToken = (user) => {
   return jwt.sign(
-    { id: user._id, role: user.role },
+    { id: user._id, role: user.role, location: user.location },
     JWT_SECRET,
     { expiresIn: '1h' }
   );
