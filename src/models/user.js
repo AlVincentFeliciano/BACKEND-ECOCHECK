@@ -13,6 +13,11 @@ const userSchema = new mongoose.Schema({
     enum: ['user', 'admin', 'superadmin'], 
     default: 'user' 
   },
+  location: {
+    type: String,
+    enum: ['Bulaon', 'Del Carmen'],
+    default: null
+  },
   bio: { type: String, default: '' },
   profilePic: { type: String, default: '' },
   points: { type: Number, default: 0 },

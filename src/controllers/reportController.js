@@ -49,9 +49,17 @@ const createReport = async (req, res) => {
 const getReports = async (req, res) => {
   try {
     let reports;
-    if (req.user.role === 'admin' || req.user.role === 'superadmin') {
+    if (req.user.role === 'superadmin') {
+      // Superadmin sees ALL reports
       reports = await Report.find().populate('user', 'firstName lastName email');
+    } else if (req.user.role === 'admin') {
+      // Admin sees only reports from their assigned location
+      if (!req.user.location) {
+        return res.status(403).json({ error: 'Admin location not set. Contact superadmin.' });
+      }
+      reports = await Report.find({ location: req.user.location }).populate('user', 'firstName lastName email');
     } else {
+      // Regular users see only their own reports
       reports = await Report.find({ user: req.user.id }).populate('user', 'firstName lastName email');
     }
     res.json(reports);

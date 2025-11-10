@@ -28,8 +28,8 @@ const authMiddleware = async (req, res, next) => {
       return res.status(403).json({ msg: 'Account deactivated' });
     }
 
-    // Attach user safely
-    req.user = { id: user._id.toString(), role: user.role };
+    // Attach user safely with location for filtering
+    req.user = { id: user._id.toString(), role: user.role, location: user.location || null };
     console.log('📌 req.user set:', req.user);
 
     next();

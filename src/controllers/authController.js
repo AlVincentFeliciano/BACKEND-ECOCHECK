@@ -18,11 +18,19 @@ const generateToken = (user) => {
 // ✅ Register User
 const registerUser = async (req, res) => {
   try {
-    const { firstName, middleInitial, lastName, email, contactNumber, password } = req.body;
+    const { firstName, middleInitial, lastName, email, contactNumber, password, location } = req.body;
     const normalizedEmail = email.toLowerCase().trim();
 
     if (!firstName || !lastName || !normalizedEmail || !contactNumber || !password) {
       return res.status(400).json({ message: 'All required fields must be provided' });
+    }
+
+    if (!location) {
+      return res.status(400).json({ message: 'Location is required' });
+    }
+
+    if (!['Bulaon', 'Del Carmen'].includes(location)) {
+      return res.status(400).json({ message: 'Invalid location. Must be Bulaon or Del Carmen.' });
     }
 
     if (contactNumber.length !== 11 || !/^\d{11}$/.test(contactNumber)) {
@@ -47,6 +55,7 @@ const registerUser = async (req, res) => {
       contactNumber,
       password,
       role: 'user',
+      location,
       isEmailVerified: false,
       verificationCode,
       verificationCodeExpiry,
@@ -194,11 +203,20 @@ const registerAdmin = async (req, res) => {
       return res.status(403).json({ message: 'Access denied. Only superadmin can add admins.' });
     }
 
-    const { firstName, middleInitial, lastName, email, contactNumber, password, role } = req.body;
+    const { firstName, middleInitial, lastName, email, contactNumber, password, role, location } = req.body;
     const normalizedEmail = email.toLowerCase().trim();
 
     if (!['admin', 'superadmin'].includes(role)) {
       return res.status(400).json({ message: 'Invalid role. Must be admin or superadmin.' });
+    }
+
+    // Validate location for admin role
+    if (role === 'admin' && !location) {
+      return res.status(400).json({ message: 'Location is required for admin role.' });
+    }
+
+    if (location && !['Bulaon', 'Del Carmen'].includes(location)) {
+      return res.status(400).json({ message: 'Invalid location. Must be Bulaon or Del Carmen.' });
     }
 
     const existingAdmin = await User.findOne({ email: normalizedEmail });
@@ -212,6 +230,7 @@ const registerAdmin = async (req, res) => {
       contactNumber,
       password,
       role,
+      location: role === 'admin' ? location : null, // Only set location for admins
     });
 
     await admin.save();
