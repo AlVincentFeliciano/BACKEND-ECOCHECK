@@ -1,5 +1,8 @@
 const Report = require('../models/report');
 const User = require('../models/user');
+const EmailService = require('../services/emailService');
+
+const emailService = new EmailService();
 
 // Create a new report
 const createReport = async (req, res) => {
@@ -98,19 +101,41 @@ const updateReportStatus = async (req, res) => {
       return res.status(400).json({ error: 'Invalid status value' });
     }
 
-    const report = await Report.findById(id);
+    const report = await Report.findById(id).populate('user', 'email firstName lastName');
     if (!report) return res.status(404).json({ error: 'Report not found' });
 
-    if (req.user.role !== 'admin' && req.user.role !== 'superadmin' && report.user.toString() !== req.user.id) {
+    if (req.user.role !== 'admin' && req.user.role !== 'superadmin' && report.user._id.toString() !== req.user.id) {
       return res.status(403).json({ error: 'Unauthorized' });
     }
 
-    // Award points if report is resolved
-    if (status === 'Resolved' && report.status !== 'Resolved') {
-      const user = await User.findById(report.user);
+    const wasResolved = report.status === 'Resolved';
+    const isNowResolved = status === 'Resolved';
+
+    // Award points if report is being marked as resolved for the first time
+    if (isNowResolved && !wasResolved) {
+      const user = await User.findById(report.user._id);
       if (user) {
         user.points += 10;
         await user.save();
+        
+        // Send email notification to the user
+        try {
+          const userName = user.firstName && user.lastName 
+            ? `${user.firstName} ${user.lastName}` 
+            : user.email.split('@')[0];
+          
+          const reportDetails = {
+            description: report.description,
+            location: report.location,
+            createdAt: report.createdAt
+          };
+          
+          await emailService.sendReportResolvedEmail(user.email, userName, reportDetails);
+          console.log(`✅ Sent resolution notification to ${user.email}`);
+        } catch (emailError) {
+          console.error('❌ Failed to send email notification:', emailError.message);
+          // Don't fail the request if email fails
+        }
       }
     }
 

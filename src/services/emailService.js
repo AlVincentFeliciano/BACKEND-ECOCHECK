@@ -429,6 +429,193 @@ class EmailService {
     }
   }
 
+  // Send report resolved notification
+  async sendReportResolvedEmail(userEmail, userName, reportDetails) {
+    const subject = '✅ Your Report Has Been Resolved - EcoCheck';
+    
+    const htmlContent = `
+      <!DOCTYPE html>
+      <html>
+      <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+      </head>
+      <body style="margin: 0; padding: 0; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #f4f7f9;">
+        <table width="100%" cellpadding="0" cellspacing="0" style="background-color: #f4f7f9; padding: 40px 20px;">
+          <tr>
+            <td align="center">
+              <table width="100%" cellpadding="0" cellspacing="0" style="max-width: 600px; background-color: #ffffff; border-radius: 16px; overflow: hidden; box-shadow: 0 4px 20px rgba(0,0,0,0.08);">
+                
+                <!-- Header -->
+                <tr>
+                  <td style="background: linear-gradient(135deg, #4CAF50 0%, #2E7D32 100%); padding: 40px 30px; text-align: center;">
+                    <div style="background-color: rgba(255,255,255,0.2); width: 80px; height: 80px; border-radius: 50%; margin: 0 auto 20px; display: flex; align-items: center; justify-content: center;">
+                      <span style="font-size: 48px;">✅</span>
+                    </div>
+                    <h1 style="margin: 0; color: #ffffff; font-size: 28px; font-weight: 700; text-shadow: 0 2px 4px rgba(0,0,0,0.1);">
+                      Report Resolved!
+                    </h1>
+                  </td>
+                </tr>
+                
+                <!-- Body -->
+                <tr>
+                  <td style="padding: 40px 30px;">
+                    <p style="margin: 0 0 20px; color: #333333; font-size: 16px; line-height: 1.6;">
+                      Hello <strong>${userName || 'User'}</strong>,
+                    </p>
+                    
+                    <p style="margin: 0 0 20px; color: #333333; font-size: 16px; line-height: 1.6;">
+                      Great news! Your environmental report has been reviewed and marked as <strong style="color: #4CAF50;">Resolved</strong>.
+                    </p>
+                    
+                    <!-- Report Details Card -->
+                    <div style="background-color: #f8f9fa; border-left: 4px solid #4CAF50; border-radius: 8px; padding: 20px; margin: 25px 0;">
+                      <h3 style="margin: 0 0 15px; color: #2E7D32; font-size: 18px;">Report Details</h3>
+                      ${reportDetails.description ? `<p style="margin: 0 0 10px; color: #555555; font-size: 14px;"><strong>Description:</strong> ${reportDetails.description}</p>` : ''}
+                      ${reportDetails.location ? `<p style="margin: 0 0 10px; color: #555555; font-size: 14px;"><strong>Location:</strong> ${reportDetails.location}</p>` : ''}
+                      ${reportDetails.createdAt ? `<p style="margin: 0; color: #555555; font-size: 14px;"><strong>Reported on:</strong> ${new Date(reportDetails.createdAt).toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' })}</p>` : ''}
+                    </div>
+                    
+                    <p style="margin: 0 0 20px; color: #333333; font-size: 16px; line-height: 1.6;">
+                      Thank you for helping keep our environment clean and reporting this issue. Your contribution makes a difference! 🌱
+                    </p>
+                    
+                    <!-- Points Earned (if applicable) -->
+                    <div style="background: linear-gradient(135deg, #FFD700 0%, #FFA500 100%); border-radius: 8px; padding: 20px; text-align: center; margin: 25px 0;">
+                      <p style="margin: 0; color: #ffffff; font-size: 18px; font-weight: 600;">
+                        🎉 You've earned <span style="font-size: 24px; font-weight: 700;">+10 points</span> for this report!
+                      </p>
+                    </div>
+                    
+                    <p style="margin: 0; color: #666666; font-size: 14px; line-height: 1.6; text-align: center;">
+                      Keep reporting environmental concerns to earn more points and help build a cleaner community.
+                    </p>
+                  </td>
+                </tr>
+                
+                <!-- Footer -->
+                <tr>
+                  <td style="background-color: #f8f9fa; padding: 30px; text-align: center; border-top: 1px solid #e0e0e0;">
+                    <p style="margin: 0 0 10px; color: #666666; font-size: 14px;">
+                      EcoCheck - Environmental Monitoring System
+                    </p>
+                    <p style="margin: 0; color: #999999; font-size: 12px;">
+                      This is an automated notification. Please do not reply to this email.
+                    </p>
+                  </td>
+                </tr>
+                
+              </table>
+            </td>
+          </tr>
+        </table>
+      </body>
+      </html>
+    `;
+
+    const textContent = `
+Report Resolved!
+
+Hello ${userName || 'User'},
+
+Great news! Your environmental report has been reviewed and marked as Resolved.
+
+Report Details:
+${reportDetails.description ? `Description: ${reportDetails.description}` : ''}
+${reportDetails.location ? `Location: ${reportDetails.location}` : ''}
+${reportDetails.createdAt ? `Reported on: ${new Date(reportDetails.createdAt).toLocaleDateString()}` : ''}
+
+You've earned +10 points for this report!
+
+Thank you for helping keep our environment clean and reporting this issue. Your contribution makes a difference!
+
+---
+EcoCheck - Environmental Monitoring System
+This is an automated notification. Please do not reply to this email.
+    `;
+
+    try {
+      if (this.useSendGrid) {
+        const msg = {
+          to: userEmail,
+          from: this.fromEmail,
+          subject: subject,
+          text: textContent,
+          html: htmlContent,
+        };
+
+        await sgMail.send(msg);
+        console.log(`✅ Report resolved email sent to ${userEmail} via SendGrid`);
+        return { success: true, provider: 'SendGrid' };
+      } else if (this.useResend) {
+        const response = await fetch('https://api.resend.com/emails', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${process.env.RESEND_API_KEY}`
+          },
+          body: JSON.stringify({
+            from: this.fromEmail || 'EcoCheck <noreply@ecocheck.app>',
+            to: [userEmail],
+            subject: subject,
+            html: htmlContent,
+          })
+        });
+
+        const data = await response.json();
+        if (!response.ok) {
+          throw new Error(data.message || 'Resend API error');
+        }
+
+        console.log(`✅ Report resolved email sent to ${userEmail} via Resend`);
+        return { success: true, provider: 'Resend', messageId: data.id };
+      } else if (this.transporter) {
+        const mailOptions = {
+          from: process.env.EMAIL_USER,
+          to: userEmail,
+          subject: subject,
+          text: textContent,
+          html: htmlContent,
+        };
+
+        const info = await this.transporter.sendMail(mailOptions);
+        console.log(`✅ Report resolved email sent to ${userEmail} via SMTP`);
+        return { success: true, provider: 'SMTP', messageId: info.messageId };
+      } else {
+        return this.developmentFallbackReportResolved(userEmail, userName, reportDetails);
+      }
+    } catch (error) {
+      console.error('❌ Error sending report resolved email:', error.message);
+      if (error.response) {
+        console.error('Error details:', error.response.body);
+      }
+      throw error;
+    }
+  }
+
+  developmentFallbackReportResolved(userEmail, userName, reportDetails) {
+    console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
+    console.log('🔧 DEVELOPMENT MODE - EMAIL NOT SENT');
+    console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
+    console.log('📧 To:', userEmail);
+    console.log('👤 Name:', userName);
+    console.log('📋 Type: Report Resolved Notification');
+    console.log('📍 Location:', reportDetails.location || 'N/A');
+    console.log('📝 Description:', reportDetails.description || 'N/A');
+    console.log('🎉 Points Awarded: +10');
+    console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
+    console.log('💡 Email would be sent in production');
+    console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n');
+    
+    return {
+      success: true,
+      messageId: 'DEV_RESOLVED_' + Date.now(),
+      provider: 'development',
+      note: 'Development mode - email displayed in console'
+    };
+  }
+
   developmentFallbackVerification(userEmail, verificationCode) {
     console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
     console.log('🔧 DEVELOPMENT MODE - EMAIL NOT SENT');
