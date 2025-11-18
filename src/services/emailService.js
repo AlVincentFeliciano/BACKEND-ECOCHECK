@@ -637,8 +637,8 @@ This is an automated notification. Please do not reply to this email.
                     
                     ${reportDetails.resolutionPhotoUrl ? `
                     <!-- Resolution Photo -->
-                    <div style="margin: 25px 0; text-align: center; background-color: #f8f9fa; padding: 15px; border-radius: 12px;">
-                      <img src="${reportDetails.resolutionPhotoUrl}" alt="Resolution Photo" style="max-width: 100%; max-height: 400px; height: auto; border-radius: 8px; box-shadow: 0 4px 15px rgba(0,0,0,0.15); display: block; margin: 0 auto; border: 2px solid #e0e0e0;" />
+                    <div style="margin: 25px 0; text-align: center;">
+                      <img src="${reportDetails.resolutionPhotoUrl}" alt="Resolution Photo" width="550" style="max-width: 100%; height: auto; border-radius: 8px; display: block; margin: 0 auto;" />
                     </div>
                     ` : ''}
                     
