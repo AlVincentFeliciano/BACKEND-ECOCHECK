@@ -120,6 +120,9 @@ const updateReportStatus = async (req, res) => {
         if (req.file) {
           resolutionPhotoUrl = req.file.path; // Cloudinary URL
           report.resolutionPhotoUrl = resolutionPhotoUrl;
+          console.log(`📷 Resolution photo uploaded to Cloudinary: ${resolutionPhotoUrl}`);
+        } else {
+          console.log('⚠️ No resolution photo uploaded (req.file is missing)');
         }
 
         // Set pending confirmation timestamp
@@ -138,6 +141,7 @@ const updateReportStatus = async (req, res) => {
             resolutionPhotoUrl: resolutionPhotoUrl
           };
           
+          console.log(`📧 Sending email with photo URL: ${resolutionPhotoUrl}`);
           await emailService.sendPendingConfirmationEmail(user.email, userName, reportDetails);
           console.log(`✅ Sent pending confirmation email to ${user.email}`);
         } catch (emailError) {
