@@ -5,11 +5,24 @@ const express = require('express');
 const connectDB = require('./src/config/db');
 const path = require('path');
 const cors = require('cors');
+const { autoResolveReports } = require('./src/jobs/autoResolveReports');
 
 const app = express();
 
 // ✅ Connect Database
 connectDB();
+
+// ✅ Auto-resolve job - Run every 6 hours
+setInterval(async () => {
+  console.log('⏰ Running scheduled auto-resolve job...');
+  await autoResolveReports();
+}, 6 * 60 * 60 * 1000); // 6 hours in milliseconds
+
+// Run immediately on startup
+setTimeout(async () => {
+  console.log('🚀 Running initial auto-resolve job...');
+  await autoResolveReports();
+}, 10000); // Wait 10 seconds after startup
 
 // ✅ Middleware
 app.use(cors({

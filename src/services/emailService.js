@@ -591,6 +591,201 @@ This is an automated notification. Please do not reply to this email.
     }
   }
 
+  // Send pending confirmation notification (new two-way confirmation system)
+  async sendPendingConfirmationEmail(userEmail, userName, reportDetails) {
+    const subject = 'Your Report is Pending Confirmation - EcoCheck';
+    
+    const htmlContent = `
+      <!DOCTYPE html>
+      <html>
+      <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+      </head>
+      <body style="margin: 0; padding: 0; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #f4f7f9;">
+        <table width="100%" cellpadding="0" cellspacing="0" style="background-color: #f4f7f9; padding: 40px 20px;">
+          <tr>
+            <td align="center">
+              <table width="100%" cellpadding="0" cellspacing="0" style="max-width: 600px; background-color: #ffffff; border-radius: 16px; overflow: hidden; box-shadow: 0 4px 20px rgba(0,0,0,0.08);">
+                
+                <!-- Header -->
+                <tr>
+                  <td style="background: linear-gradient(135deg, #FF9800 0%, #F57C00 100%); padding: 40px 30px; text-align: center;">
+                    <h1 style="margin: 0; color: #ffffff; font-size: 28px; font-weight: 700; text-shadow: 0 2px 4px rgba(0,0,0,0.1);">
+                      ⏳ Pending Your Confirmation
+                    </h1>
+                  </td>
+                </tr>
+                
+                <!-- Body -->
+                <tr>
+                  <td style="padding: 40px 30px;">
+                    <p style="margin: 0 0 20px; color: #333333; font-size: 16px; line-height: 1.6;">
+                      Hello <strong>${userName || 'User'}</strong>,
+                    </p>
+                    
+                    <p style="margin: 0 0 20px; color: #333333; font-size: 16px; line-height: 1.6;">
+                      Your environmental report has been addressed by our team. We've attached a photo showing the resolution.
+                    </p>
+                    
+                    <!-- Report Details Card -->
+                    <div style="background-color: #f8f9fa; border-left: 4px solid #FF9800; border-radius: 8px; padding: 20px; margin: 25px 0;">
+                      <h3 style="margin: 0 0 15px; color: #F57C00; font-size: 18px;">Report Details</h3>
+                      ${reportDetails.location ? `<p style="margin: 0 0 10px; color: #555555; font-size: 14px;"><strong>Location:</strong> ${reportDetails.location}</p>` : ''}
+                      ${reportDetails.createdAt ? `<p style="margin: 0; color: #555555; font-size: 14px;"><strong>Reported on:</strong> ${new Date(reportDetails.createdAt).toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' })}</p>` : ''}
+                    </div>
+                    
+                    ${reportDetails.resolutionPhotoUrl ? `
+                    <!-- Resolution Photo -->
+                    <div style="margin: 25px 0; text-align: center;">
+                      <p style="margin: 0 0 10px; color: #333333; font-size: 14px; font-weight: 600;">Resolution Photo:</p>
+                      <img src="${reportDetails.resolutionPhotoUrl}" alt="Resolution Photo" style="max-width: 100%; height: auto; border-radius: 8px; box-shadow: 0 2px 10px rgba(0,0,0,0.1);" />
+                    </div>
+                    ` : ''}
+                    
+                    <!-- Action Required Box -->
+                    <div style="background-color: #fff3e0; border: 2px solid #FF9800; border-radius: 8px; padding: 20px; margin: 25px 0;">
+                      <h3 style="margin: 0 0 10px; color: #F57C00; font-size: 16px;">⚡ Action Required</h3>
+                      <p style="margin: 0; color: #555555; font-size: 14px; line-height: 1.6;">
+                        Please open the <strong>EcoCheck mobile app</strong> to confirm that the issue has been resolved, or report if it's still unresolved.
+                      </p>
+                      <p style="margin: 10px 0 0; color: #555555; font-size: 13px;">
+                        <em>If you don't respond within 3 days, the report will be automatically marked as resolved.</em>
+                      </p>
+                    </div>
+                    
+                    <p style="margin: 0; color: #666666; font-size: 14px; line-height: 1.6; text-align: center;">
+                      Thank you for helping keep our environment clean! 🌱
+                    </p>
+                  </td>
+                </tr>
+                
+                <!-- Footer -->
+                <tr>
+                  <td style="background-color: #f8f9fa; padding: 30px; text-align: center; border-top: 1px solid #e0e0e0;">
+                    <p style="margin: 0 0 10px; color: #666666; font-size: 14px;">
+                      EcoCheck - Environmental Monitoring System
+                    </p>
+                    <p style="margin: 0; color: #999999; font-size: 12px;">
+                      This is an automated notification. Please do not reply to this email.
+                    </p>
+                  </td>
+                </tr>
+                
+              </table>
+            </td>
+          </tr>
+        </table>
+      </body>
+      </html>
+    `;
+
+    const textContent = `
+Pending Your Confirmation
+
+Hello ${userName || 'User'},
+
+Your environmental report has been addressed by our team.
+
+Report Details:
+${reportDetails.location ? `Location: ${reportDetails.location}` : ''}
+${reportDetails.createdAt ? `Reported on: ${new Date(reportDetails.createdAt).toLocaleDateString()}` : ''}
+
+${reportDetails.resolutionPhotoUrl ? `Resolution photo has been attached.` : ''}
+
+ACTION REQUIRED:
+Please open the EcoCheck mobile app to confirm that the issue has been resolved, or report if it's still unresolved.
+
+If you don't respond within 3 days, the report will be automatically marked as resolved.
+
+Thank you for helping keep our environment clean!
+
+---
+EcoCheck - Environmental Monitoring System
+This is an automated notification. Please do not reply to this email.
+    `;
+
+    try {
+      if (this.useSendGrid) {
+        const msg = {
+          to: userEmail,
+          from: this.fromEmail,
+          subject: subject,
+          text: textContent,
+          html: htmlContent,
+        };
+
+        await sgMail.send(msg);
+        console.log(`✅ Pending confirmation email sent to ${userEmail} via SendGrid`);
+        return { success: true, provider: 'SendGrid' };
+      } else if (this.useResend) {
+        const response = await fetch('https://api.resend.com/emails', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${process.env.RESEND_API_KEY}`
+          },
+          body: JSON.stringify({
+            from: this.fromEmail || 'EcoCheck <noreply@ecocheck.app>',
+            to: [userEmail],
+            subject: subject,
+            html: htmlContent,
+          })
+        });
+
+        const data = await response.json();
+        if (!response.ok) {
+          throw new Error(data.message || 'Resend API error');
+        }
+
+        console.log(`✅ Pending confirmation email sent to ${userEmail} via Resend`);
+        return { success: true, provider: 'Resend', messageId: data.id };
+      } else if (this.transporter) {
+        const mailOptions = {
+          from: process.env.EMAIL_USER,
+          to: userEmail,
+          subject: subject,
+          text: textContent,
+          html: htmlContent,
+        };
+
+        const info = await this.transporter.sendMail(mailOptions);
+        console.log(`✅ Pending confirmation email sent to ${userEmail} via SMTP`);
+        return { success: true, provider: 'SMTP', messageId: info.messageId };
+      } else {
+        return this.developmentFallbackPendingConfirmation(userEmail, userName, reportDetails);
+      }
+    } catch (error) {
+      console.error('❌ Error sending pending confirmation email:', error.message);
+      if (error.response) {
+        console.error('Error details:', error.response.body);
+      }
+      throw error;
+    }
+  }
+
+  developmentFallbackPendingConfirmation(userEmail, userName, reportDetails) {
+    console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
+    console.log('🔧 DEVELOPMENT MODE - EMAIL NOT SENT');
+    console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
+    console.log('📧 To:', userEmail);
+    console.log('👤 Name:', userName);
+    console.log('📋 Type: Pending Confirmation Notification');
+    console.log('📍 Location:', reportDetails.location || 'N/A');
+    console.log('🖼️  Resolution Photo:', reportDetails.resolutionPhotoUrl || 'N/A');
+    console.log('⏰ Auto-resolve in: 3 days');
+    console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
+    console.log('💡 Email would be sent in production');
+    console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n');
+    
+    return {
+      success: true,
+      messageId: 'DEV_PENDING_' + Date.now(),
+      provider: 'development',
+      note: 'Development mode - email displayed in console'
+    };
+  }
+
   developmentFallbackReportResolved(userEmail, userName, reportDetails) {
     console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
     console.log('🔧 DEVELOPMENT MODE - EMAIL NOT SENT');

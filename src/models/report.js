@@ -16,6 +16,10 @@ const reportSchema = new mongoose.Schema(
     photoUrl: String,
     status: { type: String, default: 'Pending' },
     user: { type: mongoose.Schema.Types.ObjectId, ref: 'User' }, // link to user
+    // Two-way confirmation fields
+    resolutionPhotoUrl: String, // Photo uploaded by admin when marking as resolved
+    rejectionReason: String, // Reason provided by user if they reject the resolution
+    pendingConfirmationSince: Date, // Timestamp when status changed to "Pending Confirmation"
   },
   { timestamps: true }
 );

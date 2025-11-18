@@ -1,7 +1,7 @@
 const express = require('express');
 const router = express.Router();
 const multer = require('multer');
-const { createReport, getReports, updateReportStatus } = require('../controllers/reportController');
+const { createReport, getReports, updateReportStatus, confirmResolution, rejectResolution } = require('../controllers/reportController');
 const { authMiddleware } = require('../middleware/authMiddleware');
 const { reportStorage } = require('../config/cloudinaryConfig');
 const Report = require('../models/report');
@@ -10,8 +10,10 @@ const upload = multer({ storage: reportStorage });
 
 router.post('/', authMiddleware, upload.single('photo'), createReport);
 router.get('/', authMiddleware, getReports);
-router.put('/:id/status', authMiddleware, updateReportStatus);
-router.put('/:id', authMiddleware, updateReportStatus); // Alternative route for status update
+router.put('/:id/status', authMiddleware, upload.single('resolutionPhoto'), updateReportStatus);
+router.put('/:id', authMiddleware, upload.single('resolutionPhoto'), updateReportStatus); // Alternative route with photo upload
+router.put('/:id/confirm', authMiddleware, confirmResolution); // User confirms resolution
+router.put('/:id/reject', authMiddleware, rejectResolution); // User rejects resolution
 
 // Debug endpoint to check report locations
 router.get('/debug/locations', authMiddleware, async (req, res) => {
