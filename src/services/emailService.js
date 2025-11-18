@@ -431,7 +431,7 @@ class EmailService {
 
   // Send report resolved notification
   async sendReportResolvedEmail(userEmail, userName, reportDetails) {
-    const subject = '✅ Your Report Has Been Resolved - EcoCheck';
+    const subject = 'Your Report Has Been Resolved - EcoCheck';
     
     const htmlContent = `
       <!DOCTYPE html>
@@ -449,9 +449,6 @@ class EmailService {
                 <!-- Header -->
                 <tr>
                   <td style="background: linear-gradient(135deg, #4CAF50 0%, #2E7D32 100%); padding: 40px 30px; text-align: center;">
-                    <div style="background-color: rgba(255,255,255,0.2); width: 80px; height: 80px; border-radius: 50%; margin: 0 auto 20px; display: flex; align-items: center; justify-content: center;">
-                      <span style="font-size: 48px;">✅</span>
-                    </div>
                     <h1 style="margin: 0; color: #ffffff; font-size: 28px; font-weight: 700; text-shadow: 0 2px 4px rgba(0,0,0,0.1);">
                       Report Resolved!
                     </h1>

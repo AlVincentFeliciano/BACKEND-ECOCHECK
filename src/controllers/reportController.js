@@ -137,6 +137,15 @@ const updateReportStatus = async (req, res) => {
           // Don't fail the request if email fails
         }
       }
+
+      // Remove PII for data privacy when marking as resolved
+      console.log(`🔒 Removing PII from resolved report ${report._id}`);
+      report.name = null;
+      report.firstName = null;
+      report.middleName = null;
+      report.lastName = null;
+      report.contact = null;
+      report.description = null;
     }
 
     report.status = status;
