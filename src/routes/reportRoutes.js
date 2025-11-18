@@ -11,6 +11,7 @@ const upload = multer({ storage: reportStorage });
 router.post('/', authMiddleware, upload.single('photo'), createReport);
 router.get('/', authMiddleware, getReports);
 router.put('/:id/status', authMiddleware, updateReportStatus);
+router.put('/:id', authMiddleware, updateReportStatus); // Alternative route for status update
 
 // Debug endpoint to check report locations
 router.get('/debug/locations', authMiddleware, async (req, res) => {

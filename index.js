@@ -26,6 +26,7 @@ app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 app.use('/api/users', require('./src/routes/userRoutes'));
 app.use('/api/auth', require('./src/routes/authRoutes'));
 app.use('/api/reports', require('./src/routes/reportRoutes'));
+app.use('/api/migration', require('./src/routes/migrationRoutes'));
 
 // ✅ Serve admin dashboard (React build) for web
 if (process.env.NODE_ENV === 'production') {
