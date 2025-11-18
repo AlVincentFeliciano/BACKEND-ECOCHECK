@@ -1,11 +1,16 @@
 const express = require('express');
 const router = express.Router();
 const Report = require('../models/report');
-const { authenticateToken, isSuperAdmin } = require('../middleware/authMiddleware');
+const { authMiddleware } = require('../middleware/authMiddleware');
 
 // Admin-only migration endpoint to remove PII from resolved reports
-router.post('/remove-pii-from-resolved', authenticateToken, isSuperAdmin, async (req, res) => {
+router.post('/remove-pii-from-resolved', authMiddleware, async (req, res) => {
   try {
+    // Check if user is superadmin
+    if (req.user.role !== 'superadmin') {
+      return res.status(403).json({ error: 'Access denied. Superadmin only.' });
+    }
+    
     console.log('🔒 Starting PII removal migration...');
     
     // Find all resolved reports
