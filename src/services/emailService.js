@@ -637,8 +637,14 @@ This is an automated notification. Please do not reply to this email.
                     
                     ${reportDetails.resolutionPhotoUrl ? `
                     <!-- Resolution Photo -->
-                    <div style="margin: 25px 0; text-align: center;">
-                      <img src="${reportDetails.resolutionPhotoUrl}" alt="Resolution Photo" width="550" style="max-width: 100%; height: auto; border-radius: 8px; display: block; margin: 0 auto;" />
+                    <div style="margin: 25px 0; text-align: center; background-color: #f8f9fa; padding: 20px; border-radius: 8px;">
+                      <p style="margin: 0 0 10px; color: #333333; font-size: 16px; font-weight: 600;">📷 View Resolution Photo</p>
+                      <p style="margin: 0 0 15px; color: #666666; font-size: 14px; line-height: 1.6;">
+                        We've uploaded a photo showing how your report was resolved. Click the button below to view it securely.
+                      </p>
+                      <a href="${reportDetails.resolutionPhotoUrl}" target="_blank" style="display: inline-block; background-color: #4CAF50; color: white; padding: 12px 24px; text-decoration: none; border-radius: 6px; font-weight: 600; margin-top: 10px;">
+                        View Resolution Photo
+                      </a>
                     </div>
                     ` : ''}
                     
