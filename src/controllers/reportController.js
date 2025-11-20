@@ -63,7 +63,7 @@ const getReports = async (req, res) => {
     let reports;
     if (req.user.role === 'superadmin') {
       // Superadmin sees ALL reports
-      reports = await Report.find().populate('user', 'firstName lastName email');
+      reports = await Report.find().populate('user', 'firstName lastName middleInitial email contactNumber');
       console.log('📊 Superadmin - Total reports:', reports.length);
     } else if (req.user.role === 'admin') {
       // Admin sees only reports from their assigned location
@@ -72,7 +72,7 @@ const getReports = async (req, res) => {
         return res.status(403).json({ error: 'Admin location not set. Contact superadmin.' });
       }
       console.log('📊 Filtering reports by userLocation:', req.user.location);
-      reports = await Report.find({ userLocation: req.user.location }).populate('user', 'firstName lastName email');
+      reports = await Report.find({ userLocation: req.user.location }).populate('user', 'firstName lastName middleInitial email contactNumber');
       console.log('📊 Admin reports found:', reports.length);
       
       // Debug: Show all report locations
@@ -80,7 +80,7 @@ const getReports = async (req, res) => {
       console.log('📊 All report userLocations in DB:', allReports.map(r => ({ id: r._id, userLocation: r.userLocation, location: r.location })));
     } else {
       // Regular users see only their own reports
-      reports = await Report.find({ user: req.user.id }).populate('user', 'firstName lastName email');
+      reports = await Report.find({ user: req.user.id }).populate('user', 'firstName lastName middleInitial email contactNumber');
       console.log('📊 User reports found:', reports.length);
     }
     res.json(reports);
