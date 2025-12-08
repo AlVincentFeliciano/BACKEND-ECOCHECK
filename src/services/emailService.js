@@ -647,15 +647,13 @@ This is an automated notification. Please do not reply to this email.
                         We've uploaded a photo showing how your report was resolved.
                       </p>
                       <!-- Direct clickable image -->
-                      <a href="${reportDetails.resolutionPhotoUrl}" target="_blank" style="display: inline-block; text-decoration: none; border-radius: 8px; overflow: hidden;">
+                      <a href="${reportDetails.resolutionPhotoUrl}" target="_blank" style="display: inline-block; text-decoration: none;">
                         <img src="${reportDetails.resolutionPhotoUrl}" alt="Resolution Photo" style="max-width: 100%; height: auto; border-radius: 8px; display: block; max-height: 400px;" />
                       </a>
-                      <!-- Fallback button -->
-                      <div style="margin-top: 15px;">
-                        <a href="${reportDetails.resolutionPhotoUrl}" target="_blank" style="display: inline-block; background-color: #4CAF50; color: white; padding: 14px 28px; text-decoration: none; border-radius: 6px; font-weight: 600; font-size: 14px; border: none; cursor: pointer;">
-                          View Full Resolution Photo
-                        </a>
-                      </div>
+                      <!-- Simple text link as fallback -->
+                      <p style="margin: 15px 0 0; color: #333333; font-size: 14px;">
+                        <a href="${reportDetails.resolutionPhotoUrl}" target="_blank" style="color: #FF9800; text-decoration: underline; font-weight: 600;">Click here to view the resolution photo</a>
+                      </p>
                     </div>
                     ` : ''}
                     
