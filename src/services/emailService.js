@@ -410,6 +410,10 @@ class EmailService {
                 </div>
                 <p><strong>This code expires in 15 minutes.</strong></p>
                 <p>If you didn't create an EcoCheck account, please ignore this email.</p>
+                <hr style="border: none; border-top: 1px solid #ddd; margin: 20px 0;">
+                <p style="color: #666; font-size: 12px;">
+                  This is an automated email from EcoCheck. Please do not reply to this email.
+                </p>
               </div>
             </div>
           `
@@ -642,9 +646,10 @@ This is an automated notification. Please do not reply to this email.
                       <p style="margin: 0 0 15px; color: #666666; font-size: 14px; line-height: 1.6;">
                         We've uploaded a photo showing how your report was resolved. Click the button below to view it securely.
                       </p>
-                      <a href="${reportDetails.resolutionPhotoUrl}" target="_blank" style="display: inline-block; background-color: #4CAF50; color: white; padding: 12px 24px; text-decoration: none; border-radius: 6px; font-weight: 600; margin-top: 10px;">
+                      <a href="${reportDetails.resolutionPhotoUrl}" target="_blank" style="display: inline-block; background-color: #4CAF50; color: white; padding: 12px 24px; text-decoration: none; border-radius: 6px; font-weight: 600; margin-top: 10px; font-size: 14px;">
                         View Resolution Photo
                       </a>
+                      <img src="${reportDetails.resolutionPhotoUrl}" alt="Resolution Photo" style="max-width: 100%; height: auto; margin-top: 15px; border-radius: 8px; display: block;" />
                     </div>
                     ` : ''}
                     
