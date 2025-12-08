@@ -644,12 +644,18 @@ This is an automated notification. Please do not reply to this email.
                     <div style="margin: 25px 0; text-align: center; background-color: #f8f9fa; padding: 20px; border-radius: 8px;">
                       <p style="margin: 0 0 10px; color: #333333; font-size: 16px; font-weight: 600;">📷 View Resolution Photo</p>
                       <p style="margin: 0 0 15px; color: #666666; font-size: 14px; line-height: 1.6;">
-                        We've uploaded a photo showing how your report was resolved. Click the button below to view it securely.
+                        We've uploaded a photo showing how your report was resolved.
                       </p>
-                      <a href="${reportDetails.resolutionPhotoUrl}" target="_blank" style="display: inline-block; background-color: #4CAF50; color: white; padding: 12px 24px; text-decoration: none; border-radius: 6px; font-weight: 600; margin-top: 10px; font-size: 14px;">
-                        View Resolution Photo
+                      <!-- Direct clickable image -->
+                      <a href="${reportDetails.resolutionPhotoUrl}" target="_blank" style="display: inline-block; text-decoration: none; border-radius: 8px; overflow: hidden;">
+                        <img src="${reportDetails.resolutionPhotoUrl}" alt="Resolution Photo" style="max-width: 100%; height: auto; border-radius: 8px; display: block; max-height: 400px;" />
                       </a>
-                      <img src="${reportDetails.resolutionPhotoUrl}" alt="Resolution Photo" style="max-width: 100%; height: auto; margin-top: 15px; border-radius: 8px; display: block;" />
+                      <!-- Fallback button -->
+                      <div style="margin-top: 15px;">
+                        <a href="${reportDetails.resolutionPhotoUrl}" target="_blank" style="display: inline-block; background-color: #4CAF50; color: white; padding: 14px 28px; text-decoration: none; border-radius: 6px; font-weight: 600; font-size: 14px; border: none; cursor: pointer;">
+                          View Full Resolution Photo
+                        </a>
+                      </div>
                     </div>
                     ` : ''}
                     
