@@ -646,14 +646,20 @@ This is an automated notification. Please do not reply to this email.
                       <p style="margin: 0 0 15px; color: #666666; font-size: 14px; line-height: 1.6;">
                         We've uploaded a photo showing how your report was resolved.
                       </p>
-                      <!-- Direct clickable image -->
-                      <a href="${reportDetails.resolutionPhotoUrl}" target="_blank" style="display: inline-block; text-decoration: none;">
+                      <!-- Clickable image -->
+                      <a href="${reportDetails.resolutionPhotoUrl}" target="_blank">
                         <img src="${reportDetails.resolutionPhotoUrl}" alt="Resolution Photo" style="max-width: 100%; height: auto; border-radius: 8px; display: block; max-height: 400px;" />
                       </a>
-                      <!-- Simple text link as fallback -->
-                      <p style="margin: 15px 0 0; color: #333333; font-size: 14px;">
-                        <a href="${reportDetails.resolutionPhotoUrl}" target="_blank" style="color: #FF9800; text-decoration: underline; font-weight: 600;">Click here to view the resolution photo</a>
-                      </p>
+                      <!-- Table-based button (better mobile compatibility) -->
+                      <table cellpadding="0" cellspacing="0" style="margin: 15px auto; border-collapse: collapse;">
+                        <tr>
+                          <td style="background-color: #FF9800; border-radius: 6px; padding: 0;">
+                            <a href="${reportDetails.resolutionPhotoUrl}" target="_blank" style="display: block; color: white; text-decoration: none; padding: 14px 28px; font-weight: 600; font-size: 14px;">
+                              View Full Resolution Photo
+                            </a>
+                          </td>
+                        </tr>
+                      </table>
                     </div>
                     ` : ''}
                     
