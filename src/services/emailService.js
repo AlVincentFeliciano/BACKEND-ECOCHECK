@@ -17,7 +17,9 @@ class EmailService {
         // Using Resend API (alternative)
         this.useResend = true;
         this.useSendGrid = false;
+        this.fromEmail = 'onboarding@resend.dev'; // Resend requires verified domain or their default email
         console.log('✅ Email Service initialized with Resend API');
+        console.log('📧 From email:', this.fromEmail);
       } else if (process.env.EMAIL_USER && process.env.EMAIL_PASS) {
         // Fallback to Gmail SMTP
         this.transporter = nodemailer.createTransport({
@@ -557,7 +559,7 @@ This is an automated notification. Please do not reply to this email.
             'Authorization': `Bearer ${process.env.RESEND_API_KEY}`
           },
           body: JSON.stringify({
-            from: this.fromEmail || 'EcoCheck <noreply@ecocheck.app>',
+            from: this.fromEmail,
             to: [userEmail],
             subject: subject,
             html: htmlContent,
@@ -746,7 +748,7 @@ This is an automated notification. Please do not reply to this email.
             'Authorization': `Bearer ${process.env.RESEND_API_KEY}`
           },
           body: JSON.stringify({
-            from: this.fromEmail || 'EcoCheck <noreply@ecocheck.app>',
+            from: this.fromEmail,
             to: [userEmail],
             subject: subject,
             html: htmlContent,
