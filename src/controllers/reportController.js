@@ -108,11 +108,11 @@ const updateReportStatus = async (req, res) => {
       return res.status(403).json({ error: 'Unauthorized' });
     }
 
-    const wasPendingConfirmation = report.status === 'Pending Confirmation';
-    const isNowPendingConfirmation = status === 'Pending Confirmation';
+    const wasResolved = report.status === 'Resolved';
+    const isNowResolved = status === 'Resolved';
 
-    // Handle admin marking as "Pending Confirmation" (was "Resolved")
-    if (isNowPendingConfirmation && !wasPendingConfirmation) {
+    // Handle admin marking as "Resolved"
+    if (isNowResolved && !wasResolved) {
       const user = await User.findById(report.user._id);
       if (user) {
         // Upload resolution photo if provided
@@ -150,8 +150,8 @@ const updateReportStatus = async (req, res) => {
         }
       }
 
-      // Remove PII for data privacy when pending confirmation
-      console.log(`🔒 Removing PII from pending confirmation report ${report._id}`);
+      // Remove PII for data privacy when resolved
+      console.log(`🔒 Removing PII from resolved report ${report._id}`);
       report.name = null;
       report.firstName = null;
       report.middleName = null;
@@ -200,8 +200,26 @@ const confirmResolution = async (req, res) => {
     report.pendingConfirmationSince = null;
     await report.save();
 
-    // Send confirmation email to admin (optional)
-    // You can implement this later if needed
+    // Send resolution confirmation email to user
+    if (user) {
+      try {
+        const userName = user.firstName && user.lastName 
+          ? `${user.firstName} ${user.lastName}` 
+          : user.email.split('@')[0];
+        
+        const reportDetails = {
+          description: report.description,
+          location: report.location,
+          createdAt: report.createdAt
+        };
+        
+        await emailService.sendReportResolvedEmail(user.email, userName, reportDetails);
+        console.log(`✅ Sent resolution confirmation email to ${user.email}`);
+      } catch (emailError) {
+        console.error('❌ Failed to send resolution confirmation email:', emailError.message);
+        // Don't fail the request if email fails
+      }
+    }
 
     res.json({ message: 'Resolution confirmed successfully', report });
   } catch (error) {

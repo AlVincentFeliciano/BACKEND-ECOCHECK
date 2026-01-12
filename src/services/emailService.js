@@ -30,7 +30,10 @@ class EmailService {
           },
           tls: {
             rejectUnauthorized: false
-          }
+          },
+          connectionTimeout: 30000, // 30 seconds
+          greetingTimeout: 20000,   // 20 seconds
+          socketTimeout: 30000       // 30 seconds
         });
         console.log('✅ Email Service initialized with Gmail SMTP');
         this.testConnection();

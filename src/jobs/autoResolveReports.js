@@ -1,6 +1,9 @@
 // backend/src/jobs/autoResolveReports.js
 const Report = require('../models/report');
 const User = require('../models/user');
+const EmailService = require('../services/emailService');
+
+const emailService = new EmailService();
 
 /**
  * Auto-resolve reports that have been pending confirmation for 3+ days
@@ -17,7 +20,7 @@ const autoResolveReports = async () => {
     const reportsToResolve = await Report.find({
       status: 'Pending Confirmation',
       pendingConfirmationSince: { $lte: threeDaysAgo }
-    }).populate('user', 'email points');
+    }).populate('user', 'email firstName lastName points');
     
     if (reportsToResolve.length === 0) {
       console.log('✅ No reports to auto-resolve');
@@ -37,6 +40,25 @@ const autoResolveReports = async () => {
             user.points += 10;
             await user.save();
             console.log(`  ✓ Awarded 10 points to user ${user.email}`);
+            
+            // Send auto-resolution email to user
+            try {
+              const userName = user.firstName && user.lastName 
+                ? `${user.firstName} ${user.lastName}` 
+                : user.email.split('@')[0];
+              
+              const reportDetails = {
+                description: report.description,
+                location: report.location,
+                createdAt: report.createdAt
+              };
+              
+              await emailService.sendReportResolvedEmail(user.email, userName, reportDetails);
+              console.log(`  ✓ Sent auto-resolution email to ${user.email}`);
+            } catch (emailError) {
+              console.error(`  ⚠️ Failed to send email to ${user.email}:`, emailError.message);
+              // Don't fail the job if email fails
+            }
           }
         }
         
