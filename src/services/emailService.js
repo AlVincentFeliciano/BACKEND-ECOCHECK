@@ -21,21 +21,26 @@ class EmailService {
         console.log('✅ Email Service initialized with Resend API');
         console.log('📧 From email:', this.fromEmail);
       } else if (process.env.EMAIL_USER && process.env.EMAIL_PASS) {
-        // Fallback to Gmail SMTP
+        // Fallback to Gmail SMTP with explicit host/port configuration
         this.transporter = nodemailer.createTransport({
-          service: 'gmail',
+          host: 'smtp.gmail.com',
+          port: 587,
+          secure: false, // use STARTTLS
           auth: {
             user: process.env.EMAIL_USER,
             pass: process.env.EMAIL_PASS
           },
           tls: {
-            rejectUnauthorized: false
+            rejectUnauthorized: false,
+            ciphers: 'SSLv3'
           },
           connectionTimeout: 30000, // 30 seconds
           greetingTimeout: 20000,   // 20 seconds
-          socketTimeout: 30000       // 30 seconds
+          socketTimeout: 30000,     // 30 seconds
+          debug: true               // Enable debug logging
         });
         console.log('✅ Email Service initialized with Gmail SMTP');
+        console.log('📧 Using:', process.env.EMAIL_USER);
         this.testConnection();
       } else {
         // No email credentials configured - use development mode
