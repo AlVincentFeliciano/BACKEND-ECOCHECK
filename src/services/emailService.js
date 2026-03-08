@@ -129,7 +129,7 @@ class EmailService {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          from: 'EcoCheck <noreply@ecocheck.app>',
+          from: `EcoCheck <${this.fromEmail}>`,
           to: [userEmail],
           subject: 'EcoCheck - Password Reset Verification Code',
           html: `
@@ -403,7 +403,7 @@ class EmailService {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          from: 'EcoCheck <noreply@ecocheck.app>',
+          from: `EcoCheck <${this.fromEmail}>`,
           to: [userEmail],
           subject: 'EcoCheck - Verify Your Email Address',
           html: `
