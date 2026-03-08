@@ -111,7 +111,7 @@ const updateReportStatus = async (req, res) => {
     const wasResolved = report.status === 'Resolved';
     const isNowResolved = status === 'Resolved';
 
-    // Handle admin marking as "Resolved"
+    // Handle admin marking as "Resolved" → set to Pending Confirmation first
     if (isNowResolved && !wasResolved) {
       const user = await User.findById(report.user._id);
       if (user) {
@@ -150,20 +150,11 @@ const updateReportStatus = async (req, res) => {
         }
       }
 
-      // Remove PII for data privacy when resolved
-      console.log(`🔒 Removing PII from resolved report ${report._id}`);
-      report.name = null;
-      report.firstName = null;
-      report.middleName = null;
-      report.lastName = null;
-      report.contact = null;
-      report.description = null;
+      // Set status to Pending Confirmation, not Resolved yet
+      report.status = 'Pending Confirmation';
+      await report.save();
+      return res.json(report);
     }
-
-    report.status = status;
-    await report.save();
-
-    res.json(report);
   } catch (error) {
     console.error(error);
     res.status(500).json({ error: 'Server error' });
@@ -195,9 +186,17 @@ const confirmResolution = async (req, res) => {
       console.log(`✅ Awarded 10 points to user ${user.email}`);
     }
 
-    // Mark as resolved
+    // Mark as resolved and remove PII
     report.status = 'Resolved';
     report.pendingConfirmationSince = null;
+    // Remove PII for data privacy now that report is truly resolved
+    console.log(`🔒 Removing PII from resolved report ${report._id}`);
+    report.name = null;
+    report.firstName = null;
+    report.middleName = null;
+    report.lastName = null;
+    report.contact = null;
+    report.description = null;
     await report.save();
 
     // Send resolution confirmation email to user
