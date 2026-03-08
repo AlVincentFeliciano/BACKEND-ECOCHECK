@@ -599,7 +599,14 @@ This is an automated notification. Please do not reply to this email.
     `;
 
     try {
-      if (this.useSendGrid) {
+      if (this.useBrevo) {
+        const result = await this.sendWithBrevo(userEmail, subject, htmlContent);
+        if (result.success) {
+          console.log(`✅ Report resolved email sent to ${userEmail} via Brevo`);
+          return { success: true, provider: 'Brevo' };
+        }
+        throw new Error(result.error || 'Brevo failed');
+      } else if (this.useSendGrid) {
         const msg = {
           to: userEmail,
           from: this.fromEmail,
@@ -788,7 +795,14 @@ This is an automated notification. Please do not reply to this email.
     `;
 
     try {
-      if (this.useSendGrid) {
+      if (this.useBrevo) {
+        const result = await this.sendWithBrevo(userEmail, subject, htmlContent);
+        if (result.success) {
+          console.log(`✅ Pending confirmation email sent to ${userEmail} via Brevo`);
+          return { success: true, provider: 'Brevo' };
+        }
+        throw new Error(result.error || 'Brevo failed');
+      } else if (this.useSendGrid) {
         const msg = {
           to: userEmail,
           from: this.fromEmail,
