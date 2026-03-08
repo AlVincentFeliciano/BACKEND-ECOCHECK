@@ -35,6 +35,14 @@ app.use(express.urlencoded({ extended: true })); // handles form submissions
 // ✅ Serve uploads folder publicly
 app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 
+// ✅ Serve static public pages
+app.use(express.static(path.join(__dirname, 'public')));
+
+// ✅ Account deletion page
+app.get('/delete-account', (req, res) => {
+  res.sendFile(path.join(__dirname, 'public', 'delete-account.html'));
+});
+
 // ✅ Define API Routes
 app.use('/api/users', require('./src/routes/userRoutes'));
 app.use('/api/auth', require('./src/routes/authRoutes'));
