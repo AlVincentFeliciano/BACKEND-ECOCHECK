@@ -5,8 +5,15 @@ const sgMail = require('@sendgrid/mail');
 class EmailService {
   constructor() {
     try {
-      // Force SendGrid if API key exists (prioritize over others)
-      if (process.env.SENDGRID_API_KEY && process.env.SENDGRID_API_KEY.startsWith('SG.')) {
+      // Force Brevo if API key exists (prioritize — works on Render)
+      if (process.env.BREVO_API_KEY) {
+        this.useBrevo = true;
+        this.useSendGrid = false;
+        this.useResend = false;
+        this.fromEmail = process.env.BREVO_FROM_EMAIL || process.env.EMAIL_USER || 'noreply@ecocheck.app';
+        console.log('✅ Email Service initialized with Brevo');
+        console.log('📧 From email:', this.fromEmail);
+      } else if (process.env.SENDGRID_API_KEY && process.env.SENDGRID_API_KEY.startsWith('SG.')) {
         sgMail.setApiKey(process.env.SENDGRID_API_KEY);
         this.useSendGrid = true;
         this.useResend = false;
@@ -44,12 +51,13 @@ class EmailService {
         // No email credentials configured - use development mode
         console.log('⚠️ No email credentials configured - running in DEVELOPMENT MODE');
         console.log('💡 To enable email sending:');
-        console.log('   Option 1 (Recommended): Add SENDGRID_API_KEY to .env');
-        console.log('   Option 2: Add RESEND_API_KEY to .env');
-        console.log('   Option 3: Add EMAIL_USER and EMAIL_PASS to .env for Gmail');
+        console.log('   Option 1 (Recommended): Add BREVO_API_KEY to .env');
+        console.log('   Option 2: Add SENDGRID_API_KEY to .env');
+        console.log('   Option 3: Add RESEND_API_KEY to .env');
         this.transporter = null;
         this.useSendGrid = false;
         this.useResend = false;
+        this.useBrevo = false;
         this.developmentMode = true;
       }
       
@@ -163,6 +171,36 @@ class EmailService {
     }
   }
 
+  async sendWithBrevo(userEmail, subject, htmlContent) {
+    const fetch = require('node-fetch');
+    try {
+      const response = await fetch('https://api.brevo.com/v3/smtp/email', {
+        method: 'POST',
+        headers: {
+          'api-key': process.env.BREVO_API_KEY,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          sender: { name: 'EcoCheck', email: this.fromEmail },
+          to: [{ email: userEmail }],
+          subject,
+          htmlContent,
+        }),
+      });
+      if (response.ok) {
+        const data = await response.json();
+        console.log('✅ Email sent via Brevo:', data.messageId);
+        return { success: true, messageId: data.messageId };
+      } else {
+        const err = await response.text();
+        throw new Error(`Brevo API error ${response.status}: ${err}`);
+      }
+    } catch (error) {
+      console.error('❌ Brevo email failed:', error.message);
+      return { success: false, error: error.message };
+    }
+  }
+
   async sendPasswordResetEmail(userEmail, resetCode) {
     try {
       console.log(`📧 Sending password reset email to ${userEmail}`);
@@ -172,8 +210,16 @@ class EmailService {
         console.log('🔧 Development mode active - displaying code instead of sending email');
         return this.developmentFallback(userEmail, resetCode);
       }
+
+      // Try Brevo first if available
+      if (this.useBrevo) {
+        const html = `<div style="font-family:Arial,sans-serif;max-width:600px;margin:0 auto"><div style="background:#4CAF50;color:white;padding:20px;text-align:center"><h1>🌱 EcoCheck Password Reset</h1></div><div style="padding:20px;background:#f9f9f9"><h2>Password Reset Verification Code</h2><p>You requested to reset your password for your EcoCheck account.</p><div style="background:#fff;padding:20px;margin:20px 0;border-radius:5px;text-align:center;border:2px dashed #4CAF50"><h1 style="color:#4CAF50;font-size:32px;margin:0">${resetCode}</h1><p style="color:#666;margin:5px 0">Enter this code in the app</p></div><p><strong>This code expires in 10 minutes.</strong></p><p>If you didn't request this, please ignore this email.</p></div></div>`;
+        const result = await this.sendWithBrevo(userEmail, 'EcoCheck - Password Reset Verification Code', html);
+        if (result.success) return result;
+        console.log('🔄 Brevo failed, trying fallback...');
+      }
       
-      // Try SendGrid first if available
+      // Try SendGrid if available
       if (this.useSendGrid) {
         const result = await this.sendPasswordResetWithSendGrid(userEmail, resetCode);
         if (result.success) {
@@ -273,6 +319,14 @@ class EmailService {
       if (this.developmentMode) {
         console.log('🔧 Development mode active - displaying code instead of sending email');
         return this.developmentFallbackVerification(userEmail, verificationCode);
+      }
+
+      // Try Brevo first if available
+      if (this.useBrevo) {
+        const html = `<div style="font-family:Arial,sans-serif;max-width:600px;margin:0 auto"><div style="background:#4CAF50;color:white;padding:20px;text-align:center"><h1>🌱 Welcome to EcoCheck!</h1></div><div style="padding:20px;background:#f9f9f9"><h2>Hi ${userName},</h2><p>Thank you for registering! Please verify your email address.</p><div style="background:#fff;padding:20px;margin:20px 0;border-radius:5px;text-align:center;border:2px dashed #4CAF50"><h1 style="color:#4CAF50;font-size:32px;margin:0">${verificationCode}</h1><p style="color:#666;margin:5px 0">Enter this code in the app</p></div><p><strong>This code expires in 15 minutes.</strong></p><p>If you didn't create an EcoCheck account, please ignore this email.</p></div></div>`;
+        const result = await this.sendWithBrevo(userEmail, 'EcoCheck - Verify Your Email Address', html);
+        if (result.success) return result;
+        console.log('🔄 Brevo failed, trying fallback...');
       }
       
       // Try SendGrid first if available
