@@ -4,6 +4,7 @@ require('dotenv').config();
 const express = require('express');
 const connectDB = require('./src/config/db');
 const path = require('path');
+const fs = require('fs');
 const cors = require('cors');
 const { autoResolveReports } = require('./src/jobs/autoResolveReports');
 
@@ -48,6 +49,28 @@ app.use('/api/users', require('./src/routes/userRoutes'));
 app.use('/api/auth', require('./src/routes/authRoutes'));
 app.use('/api/reports', require('./src/routes/reportRoutes'));
 app.use('/api/migration', require('./src/routes/migrationRoutes'));
+
+// Keep API routes above this section
+// app.use('/api', ...);
+
+// Admin dashboard should be at /admin (not /)
+const adminBuildCandidates = [
+  path.join(__dirname, 'public', 'admin-dashboard'),
+  path.join(__dirname, 'admin-dashboard-build'), // fallback for current structure
+];
+const adminBuildPath = adminBuildCandidates.find((p) => fs.existsSync(p));
+
+if (adminBuildPath) {
+  app.use('/admin', express.static(adminBuildPath));
+  app.get('/admin/*', (req, res) => {
+    res.sendFile(path.join(adminBuildPath, 'index.html'));
+  });
+}
+
+// Backend root
+app.get('/', (req, res) => {
+  res.status(200).json({ service: 'backend', status: 'ok' });
+});
 
 // ✅ Serve admin dashboard (React build) for web
 if (process.env.NODE_ENV === 'production') {
