@@ -5,6 +5,7 @@ import auth from '../utils/auth';
 import 'bootstrap/dist/css/bootstrap.min.css';
 import './Login.css';
 import { API_URL } from '../utils/config';
+import adminLogo from '../assets/admin-logo.png';
 
 const Login = () => {
   const [email, setEmail] = useState('');
@@ -18,16 +19,13 @@ const Login = () => {
       const res = await axios.post(`${API_URL}/auth/login`, { email, password });
       console.log('Login response:', res.data);
       
-      // Store the token
       auth.setToken(res.data.token);
       
-      // Store user role if provided in response
       if (res.data.role || res.data.userRole || res.data.user?.role) {
         const role = res.data.role || res.data.userRole || res.data.user?.role;
         auth.setUserRole(role);
         console.log('User role saved:', role);
       } else {
-        // Try to decode token to get role
         try {
           const payload = JSON.parse(atob(res.data.token.split('.')[1]));
           const tokenRole = payload.role || payload.userType || payload.type;
@@ -52,7 +50,11 @@ const Login = () => {
         <div className="login-card">
           <div className="login-header">
             <div className="login-icon">
-              <img src="/ecocheck-logo.png" alt="EcoCheck Logo" style={{ width: '80px', height: '80px', objectFit: 'contain' }} />
+              <img
+                src={adminLogo}
+                alt="EcoCheck Admin Logo"
+                style={{ width: '110px', height: '110px', objectFit: 'contain' }}
+              />
             </div>
             <h2 className="login-title">Admin Portal</h2>
             <p className="login-subtitle">Sign in to access the dashboard</p>
