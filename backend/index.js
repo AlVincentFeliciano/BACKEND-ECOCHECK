@@ -49,10 +49,17 @@ app.use('/api/auth', require('./src/routes/authRoutes'));
 app.use('/api/reports', require('./src/routes/reportRoutes'));
 app.use('/api/migration', require('./src/routes/migrationRoutes'));
 
+const adminBuildPath = path.join(__dirname, 'admin-dashboard-build');
+
 // ✅ Serve admin dashboard at /admin
-app.use('/admin', express.static(path.join(__dirname, 'admin-dashboard-build')));
+app.use('/admin', express.static(adminBuildPath));
+
+app.get('/admin', (req, res) => {
+  res.sendFile(path.join(adminBuildPath, 'index.html'));
+});
+
 app.get('/admin/*', (req, res) => {
-  res.sendFile(path.join(__dirname, 'admin-dashboard-build', 'index.html'));
+  res.sendFile(path.join(adminBuildPath, 'index.html'));
 });
 
 // ✅ Root
