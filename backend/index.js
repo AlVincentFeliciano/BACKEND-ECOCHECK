@@ -51,19 +51,17 @@ app.use('/api/reports', require('./src/routes/reportRoutes'));
 app.use('/api/migration', require('./src/routes/migrationRoutes'));
 
 // ✅ Serve admin dashboard (React build) for web
-if (process.env.NODE_ENV === 'production') {
-  const adminBuildPath = path.join(__dirname, 'admin-dashboard-build');
+const adminBuildPath = path.join(__dirname, 'admin-dashboard-build');
 
-  if (fs.existsSync(adminBuildPath)) {
-    app.use(express.static(adminBuildPath));
-    app.get('*', (req, res) => {
-      res.sendFile(path.join(adminBuildPath, 'index.html'));
-    });
-  } else {
-    app.get('*', (req, res) => {
-      res.status(200).json({ service: 'EcoCheck Backend', status: 'ok' });
-    });
-  }
+if (fs.existsSync(adminBuildPath)) {
+  app.use(express.static(adminBuildPath));
+  app.get('*', (req, res) => {
+    res.sendFile(path.join(adminBuildPath, 'index.html'));
+  });
+} else {
+  app.get('*', (req, res) => {
+    res.status(200).json({ service: 'EcoCheck Backend', status: 'ok' });
+  });
 }
 
 // ✅ Start server
