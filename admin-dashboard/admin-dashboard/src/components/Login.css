@@ -1,0 +1,346 @@
+/* Login Page - Vue/Vuetify Inspired Design matching Dashboard theme */
+@import url('https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;700&display=swap');
+
+.login-bg {
+  background: #fafafa; /* Same as dashboard main-content background */
+  font-family: 'Roboto', sans-serif; /* Same font as dashboard */
+  min-height: 100vh;
+  padding: 20px;
+  position: relative;
+  overflow: hidden;
+}
+
+/* Subtle background pattern matching dashboard theme */
+.login-bg::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: linear-gradient(135deg, rgba(66, 66, 66, 0.05) 0%, rgba(66, 66, 66, 0.1) 100%);
+  z-index: 1;
+}
+
+.login-container {
+  max-width: 420px;
+  width: 100%;
+  position: relative;
+  z-index: 2;
+  margin: 0 auto;
+}
+
+/* Login Card - Vuetify Material Design exactly like dashboard cards */
+.login-card {
+  background: white;
+  border-radius: 4px; /* Same border radius as dashboard cards */
+  box-shadow: 0 2px 4px rgba(0,0,0,0.12), 0 1px 2px rgba(0,0,0,0.24); /* Exact same shadow as dashboard cards */
+  overflow: hidden;
+  transition: box-shadow 0.3s ease;
+  animation: fadeInUp 0.6s ease;
+}
+
+.login-card:hover {
+  box-shadow: 0 4px 8px rgba(0,0,0,0.16), 0 2px 4px rgba(0,0,0,0.28); /* Enhanced shadow on hover */
+}
+
+@keyframes fadeInUp {
+  from {
+    opacity: 0;
+    transform: translateY(30px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Login Header - Using same dark theme as navigation drawer */
+.login-header {
+  background: #424242; /* Same background as navigation drawer */
+  color: white;
+  text-align: center;
+  padding: 40px 30px 30px;
+  position: relative;
+}
+
+/* Accent line using dashboard color scheme */
+.login-header::after {
+  content: '';
+  position: absolute;
+  bottom: 0;
+  left: 50%;
+  width: 60px;
+  height: 3px;
+  background: rgba(255, 255, 255, 0.12); /* Same accent as navigation drawer borders */
+  transform: translateX(-50%);
+}
+
+.login-icon {
+  width: 80px;
+  height: 80px;
+  background: rgba(255, 255, 255, 0.08); /* Same hover effect as nav items */
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin: 0 auto 20px;
+  transition: background 0.3s ease;
+}
+
+.login-icon:hover {
+  background: rgba(255, 255, 255, 0.12); /* Same active state as nav items */
+}
+
+.admin-icon {
+  font-size: 36px;
+  color: rgba(255, 255, 255, 0.87); /* Same text color as nav items */
+  animation: subtle-float 3s ease-in-out infinite;
+}
+
+@keyframes subtle-float {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-3px); }
+}
+
+.login-title {
+  font-size: 28px;
+  font-weight: 500; /* Same font weight as dashboard headers */
+  margin: 0 0 8px 0;
+  letter-spacing: 0.5px;
+  color: rgba(255, 255, 255, 0.87);
+}
+
+.login-subtitle {
+  font-size: 16px;
+  color: rgba(255, 255, 255, 0.87); /* Same opacity as nav text */
+  margin: 0;
+  font-weight: 400;
+}
+
+/* Form Styles matching dashboard form elements */
+.login-form {
+  padding: 40px 30px 20px;
+}
+
+.form-group {
+  margin-bottom: 24px;
+}
+
+.form-label {
+  display: block;
+  font-weight: 500;
+  color: #424242; /* Same dark color as dashboard headers */
+  margin-bottom: 8px;
+  font-size: 14px;
+  letter-spacing: 0.25px;
+}
+
+.input-wrapper {
+  position: relative;
+}
+
+.input-icon {
+  position: absolute;
+  left: 16px;
+  top: 50%;
+  transform: translateY(-50%);
+  font-size: 16px;
+  color: #757575; /* Material Design grey */
+  z-index: 1;
+  transition: color 0.3s ease;
+}
+
+/* Input styling matching dashboard form elements */
+.modern-input {
+  width: 100%;
+  padding: 16px 16px 16px 48px;
+  border: 1px solid #e0e0e0; /* Light Material Design border */
+  border-radius: 4px; /* Same border radius as dashboard elements */
+  font-size: 16px;
+  font-family: 'Roboto', sans-serif;
+  background: white;
+  transition: all 0.3s ease;
+  box-shadow: none;
+}
+
+.modern-input:focus {
+  outline: none;
+  border-color: #424242; /* Same focus color as dashboard theme */
+  box-shadow: 0 0 0 2px rgba(66, 66, 66, 0.2);
+  transform: translateY(-1px);
+}
+
+.modern-input:focus + .input-icon {
+  color: #424242;
+}
+
+.modern-input::placeholder {
+  color: #bdbdbd; /* Material Design placeholder color */
+  font-weight: 400;
+}
+
+/* Login Button matching dashboard button style */
+.login-btn {
+  width: 100%;
+  background: #424242; /* Same background as dashboard navigation */
+  border: none;
+  border-radius: 4px; /* Same border radius as dashboard buttons */
+  padding: 16px 24px;
+  font-size: 16px;
+  font-weight: 500;
+  font-family: 'Roboto', sans-serif;
+  color: white;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  margin-top: 8px;
+  letter-spacing: 0.5px;
+  position: relative;
+  overflow: hidden;
+}
+
+/* Button hover effect matching dashboard interactions */
+.login-btn::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(90deg, transparent, rgba(255,255,255,0.1), transparent);
+  transition: left 0.5s;
+}
+
+.login-btn:hover::before {
+  left: 100%;
+}
+
+.login-btn:hover {
+  background: #616161; /* Lighter shade on hover */
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(66, 66, 66, 0.3);
+}
+
+.login-btn:active {
+  transform: translateY(-1px);
+  box-shadow: 0 2px 8px rgba(66, 66, 66, 0.3);
+}
+
+.btn-icon {
+  font-size: 18px;
+  font-style: normal;
+  transition: transform 0.3s ease;
+}
+
+.login-btn:hover .btn-icon {
+  transform: translateX(4px);
+}
+
+/* Error Alert matching dashboard error styling */
+.error-alert {
+  margin: 0 30px 20px;
+  padding: 12px 16px;
+  background: #ffebee; /* Material Design error background */
+  border: 1px solid #ffcdd2;
+  border-radius: 4px; /* Same border radius as dashboard */
+  color: #c62828; /* Material Design error text */
+  font-size: 14px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  animation: slideDown 0.3s ease;
+}
+
+@keyframes slideDown {
+  from {
+    opacity: 0;
+    transform: translateY(-10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.error-icon {
+  font-size: 16px;
+  color: #f44336; /* Material Design error icon color */
+}
+
+/* Footer matching dashboard footer style */
+.login-footer {
+  text-align: center;
+  padding: 20px 30px 30px;
+  background: #fafafa; /* Same background as dashboard main content */
+  border-top: 1px solid rgba(0, 0, 0, 0.12); /* Same border style as dashboard dividers */
+}
+
+.login-footer p {
+  margin: 0;
+  font-weight: 400;
+  color: rgba(0, 0, 0, 0.54); /* Material Design secondary text */
+  font-size: 12px;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+}
+
+/* Responsive Design matching dashboard responsive patterns */
+@media (max-width: 480px) {
+  .login-bg {
+    padding: 16px; /* Same padding as dashboard mobile */
+  }
+  
+  .login-header {
+    padding: 30px 20px 20px;
+  }
+  
+  .login-form {
+    padding: 30px 20px 15px;
+  }
+  
+  .login-footer {
+    padding: 15px 20px 25px;
+  }
+  
+  .login-title {
+    font-size: 24px;
+  }
+  
+  .login-icon {
+    width: 60px;
+    height: 60px;
+    margin-bottom: 15px;
+  }
+  
+  .admin-icon {
+    font-size: 28px;
+  }
+  
+  .modern-input {
+    font-size: 16px; /* Prevent zoom on iOS */
+  }
+}
+
+/* Focus management for accessibility matching dashboard standards */
+.login-card:focus-within {
+  box-shadow: 0 4px 8px rgba(0,0,0,0.16), 0 2px 4px rgba(0,0,0,0.28);
+}
+
+/* Loading states matching dashboard patterns */
+.login-btn:disabled {
+  background: #e0e0e0; /* Material Design disabled background */
+  color: #9e9e9e; /* Material Design disabled text */
+  cursor: not-allowed;
+  transform: none;
+  box-shadow: none;
+}
+
+.login-btn:disabled:hover {
+  background: #e0e0e0;
+  transform: none;
+  box-shadow: none;
+}

@@ -1,0 +1,15 @@
+.register-bg {
+  background: linear-gradient(120deg, #f8fafc 60%, #e2eafc 100%);
+}
+
+.register-card {
+  border-radius: 18px;
+  box-shadow: 0 8px 32px rgba(0,0,0,0.12);
+  background: linear-gradient(135deg, #f8fafc 80%, #e2eafc 100%);
+}
+
+.register-title {
+  font-weight: 700;
+  color: #2d3748;
+  letter-spacing: 0.5px;
+}

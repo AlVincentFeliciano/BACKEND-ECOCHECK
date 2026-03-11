@@ -1,0 +1,51 @@
+{
+  "name": "ecocheck-app",
+  "version": "1.0.0",
+  "main": "src/index.ts",
+  "scripts": {
+    "start": "expo start",
+    "android": "expo start --android",
+    "ios": "expo start --ios",
+    "web": "expo start --web"
+  },
+  "dependencies": {
+    "@expo/cli": "^0.19.1",
+    "@expo/metro-runtime": "~6.1.2",
+    "@react-native-async-storage/async-storage": "2.2.0",
+    "@react-native-picker/picker": "2.11.1",
+    "@react-navigation/bottom-tabs": "^7.4.6",
+    "@react-navigation/native": "^7.1.17",
+    "@react-navigation/native-stack": "^7.3.25",
+    "@react-navigation/stack": "^7.4.7",
+    "@types/axios": "^0.14.4",
+    "axios": "^1.11.0",
+    "expo": "~54.0.31",
+    "expo-camera": "~17.0.10",
+    "expo-image-picker": "~17.0.10",
+    "expo-location": "~19.0.8",
+    "expo-secure-store": "~15.0.8",
+    "expo-status-bar": "~3.0.9",
+    "jwt-decode": "^4.0.0",
+    "react": "19.1.0",
+    "react-dom": "19.1.0",
+    "react-native": "0.81.5",
+    "react-native-dropdown-picker": "^5.4.6",
+    "react-native-gesture-handler": "~2.28.0",
+    "react-native-linear-gradient": "^2.8.3",
+    "react-native-safe-area-context": "~5.6.0",
+    "react-native-screens": "~4.16.0",
+    "react-native-swiper": "^1.6.0",
+    "react-native-swiper-flatlist": "^3.2.5",
+    "react-native-web": "^0.21.0",
+    "react-native-webview": "13.15.0",
+    "react-native-youtube-iframe": "^2.4.1",
+    "undefined": "\\"
+  },
+  "devDependencies": {
+    "@babel/core": "^7.25.2",
+    "@types/jwt-decode": "^2.2.1",
+    "@types/react": "~19.1.10",
+    "typescript": "~5.9.2"
+  },
+  "private": true
+}
