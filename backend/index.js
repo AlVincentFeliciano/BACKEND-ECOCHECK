@@ -49,6 +49,12 @@ app.use('/api/auth', require('./src/routes/authRoutes'));
 app.use('/api/reports', require('./src/routes/reportRoutes'));
 app.use('/api/migration', require('./src/routes/migrationRoutes'));
 
+// ✅ Serve admin dashboard at /admin
+app.use('/admin', express.static(path.join(__dirname, 'admin-dashboard-build')));
+app.get('/admin/*', (req, res) => {
+  res.sendFile(path.join(__dirname, 'admin-dashboard-build', 'index.html'));
+});
+
 // ✅ Root
 app.get('/', (req, res) => {
   res.status(200).json({ service: 'EcoCheck Backend', status: 'ok' });
