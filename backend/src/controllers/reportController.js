@@ -104,7 +104,16 @@ const updateReportStatus = async (req, res) => {
     const report = await Report.findById(id).populate('user', 'email firstName lastName');
     if (!report) return res.status(404).json({ error: 'Report not found' });
 
-    if (req.user.role !== 'admin' && req.user.role !== 'superadmin' && report.user._id.toString() !== req.user.id) {
+    if (req.user.role === 'superadmin') {
+      // Superadmin can update any report.
+    } else if (req.user.role === 'admin') {
+      if (!req.user.location) {
+        return res.status(403).json({ error: 'Admin location not set. Contact superadmin.' });
+      }
+      if (report.userLocation !== req.user.location) {
+        return res.status(403).json({ error: 'Unauthorized for this barangay report' });
+      }
+    } else if (report.user._id.toString() !== req.user.id) {
       return res.status(403).json({ error: 'Unauthorized' });
     }
 
