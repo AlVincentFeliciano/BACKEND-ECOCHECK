@@ -1,4 +1,3 @@
-// index.js
 require('dotenv').config();
 
 const express = require('express');
@@ -9,41 +8,38 @@ const { autoResolveReports } = require('./src/jobs/autoResolveReports');
 
 const app = express();
 
-// ✅ Connect Database
+// Connect Database
 connectDB();
 
-// ✅ Auto-resolve job - Run every 6 hours
+// Auto-resolve job - Run every 6 hours
 setInterval(async () => {
-  console.log('⏰ Running scheduled auto-resolve job...');
+  console.log('Running scheduled auto-resolve job...');
   await autoResolveReports();
-}, 6 * 60 * 60 * 1000); // 6 hours in milliseconds
+}, 6 * 60 * 60 * 1000);
 
 // Run immediately on startup
 setTimeout(async () => {
-  console.log('🚀 Running initial auto-resolve job...');
+  console.log('Running initial auto-resolve job...');
   await autoResolveReports();
-}, 10000); // Wait 10 seconds after startup
+}, 10000);
 
-// ✅ Middleware
-app.use(cors({
-  origin: '*'
-}));
+// Middleware
+app.use(cors({ origin: '*' }));
+app.use(express.json());
+app.use(express.urlencoded({ extended: true }));
 
-app.use(express.json()); // handles JSON requests
-app.use(express.urlencoded({ extended: true })); // handles form submissions
-
-// ✅ Serve uploads folder publicly
+// Serve uploads folder publicly
 app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 
-// ✅ Serve static public pages
+// Serve static public pages
 app.use(express.static(path.join(__dirname, 'public')));
 
-// ✅ Account deletion page
+// Account deletion page
 app.get('/delete-account', (req, res) => {
   res.sendFile(path.join(__dirname, 'public', 'delete-account.html'));
 });
 
-// ✅ Define API Routes
+// API Routes
 app.use('/api/users', require('./src/routes/userRoutes'));
 app.use('/api/auth', require('./src/routes/authRoutes'));
 app.use('/api/reports', require('./src/routes/reportRoutes'));
@@ -51,8 +47,9 @@ app.use('/api/migration', require('./src/routes/migrationRoutes'));
 
 const adminBuildPath = path.join(__dirname, 'admin-dashboard-build');
 
-// ✅ Serve admin dashboard at /admin
+// Serve admin dashboard
 app.use('/admin', express.static(adminBuildPath));
+app.use('/admin/static', express.static(path.join(adminBuildPath, 'static')));
 
 app.get('/admin', (req, res) => {
   res.sendFile(path.join(adminBuildPath, 'index.html'));
@@ -62,16 +59,16 @@ app.get('/admin/*', (req, res) => {
   res.sendFile(path.join(adminBuildPath, 'index.html'));
 });
 
-// ✅ Root
+// Root
 app.get('/', (req, res) => {
   res.status(200).json({ service: 'EcoCheck Backend', status: 'ok' });
 });
 
-// ✅ 404 catch-all
+// 404
 app.use((req, res) => {
   res.status(404).json({ error: 'Route not found' });
 });
 
-// ✅ Start server
+// Start server
 const PORT = process.env.PORT || 5000;
-app.listen(PORT, () => console.log(`🚀 Server started on port ${PORT}`));
+app.listen(PORT, () => console.log(`Server started on port ${PORT}`));
