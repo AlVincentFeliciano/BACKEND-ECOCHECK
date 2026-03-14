@@ -50,7 +50,7 @@
     ],
 
     "extra": {
-      "apiUrl": "https://backend-ecocheck.onrender.com/api",
+      "apiUrl": "https://backend-ecocheck-9wvo.onrender.com/api",
       "eas": {
         "projectId": "484f6f9a-6dde-436a-bbe3-78f6242a7421"
       }

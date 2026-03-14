@@ -205,7 +205,7 @@ const ReportsScreen = () => {
                       source={{
                         uri: item.photoUrl.startsWith('http')
                           ? item.photoUrl
-                          : `https://backend-ecocheck.onrender.com/api${item.photoUrl}`,
+                          : `https://backend-ecocheck-9wvo.onrender.com/api${item.photoUrl}`,
                       }}
                       style={styles.leftImage}
                     />
