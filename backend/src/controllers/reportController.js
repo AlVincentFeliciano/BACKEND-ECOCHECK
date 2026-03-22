@@ -119,6 +119,7 @@ const updateReportStatus = async (req, res) => {
 
     const wasResolved = report.status === 'Resolved';
     const isNowResolved = status === 'Resolved';
+    let finalStatus = status;
 
     // Handle admin marking as "Resolved"
     if (isNowResolved && !wasResolved) {
@@ -167,9 +168,12 @@ const updateReportStatus = async (req, res) => {
       report.lastName = null;
       report.contact = null;
       report.description = null;
+
+      // Admin "Resolved" means user must confirm first in mobile app.
+      finalStatus = 'Pending Confirmation';
     }
 
-    report.status = status;
+    report.status = finalStatus;
     await report.save();
 
     res.json(report);
