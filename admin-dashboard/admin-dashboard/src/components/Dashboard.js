@@ -462,6 +462,13 @@ const Dashboard = () => {
   // Filter and sort reports based on search term, location, and date
   const getFilteredAndSortedReports = (reportsArray) => {
     let filtered = reportsArray.filter(report => {
+      // Safety filter: regular admins should only ever see reports from their own barangay.
+      if (userRole === 'admin' && adminLocation) {
+        if (report.userLocation !== adminLocation) {
+          return false;
+        }
+      }
+
       // Filter by location for superadmin
       if (locationFilter && userRole === 'superadmin') {
         if (report.userLocation !== locationFilter) {
@@ -1789,6 +1796,26 @@ const Dashboard = () => {
                               <p className="card-text dashboard-card-text">
                                 <strong>Location:</strong> {report.location || 'N/A'}
                               </p>
+
+                              {/* Show latest user rejection feedback preview on card */}
+                              {report.rejectionReason && (
+                                <div style={{
+                                  background: '#fff8e1',
+                                  border: '1px solid #ffe082',
+                                  borderRadius: '8px',
+                                  padding: '8px 10px',
+                                  marginBottom: '10px'
+                                }}>
+                                  <p className="card-text dashboard-card-text" style={{ marginBottom: '4px' }}>
+                                    <strong>Still Not Resolved ({report.userLocation || report.user?.location || 'N/A'}):</strong>
+                                  </p>
+                                  <p className="card-text dashboard-card-text" style={{ marginBottom: 0 }}>
+                                    {String(report.rejectionReason).length > 100
+                                      ? `${String(report.rejectionReason).slice(0, 100)}...`
+                                      : report.rejectionReason}
+                                  </p>
+                                </div>
+                              )}
                               
                               {/* Show privacy notice for resolved reports */}
                               {report.status === 'Resolved' && !report.contact && !report.description && (
@@ -2199,9 +2226,29 @@ const Dashboard = () => {
                           {selectedReport.status || 'Pending'}
                         </span>
                       </p>
+                      <p><strong>Barangay:</strong> {selectedReport.userLocation || selectedReport.user?.location || 'N/A'}</p>
                       <p><strong>Reported on:</strong><br/>{selectedReport.createdAt ? new Date(selectedReport.createdAt).toLocaleString() : 'N/A'}</p>
                     </div>
                   </div>
+
+                  {selectedReport.rejectionReason && (
+                    <div className="mt-3" style={{
+                      background: '#fff3e0',
+                      border: '1px solid #ffcc80',
+                      borderRadius: '10px',
+                      padding: '14px 16px'
+                    }}>
+                      <p style={{ marginBottom: '8px' }}>
+                        <strong>User Feedback (Still Not Resolved)</strong>
+                      </p>
+                      <p style={{ marginBottom: '6px' }}>
+                        <strong>Barangay:</strong> {selectedReport.userLocation || selectedReport.user?.location || 'N/A'}
+                      </p>
+                      <p style={{ marginBottom: 0, whiteSpace: 'pre-wrap' }}>
+                        {selectedReport.rejectionReason}
+                      </p>
+                    </div>
+                  )}
                   
                   {/* Only show description if not resolved or if description exists */}
                   {selectedReport.status !== 'Resolved' && selectedReport.description && (
